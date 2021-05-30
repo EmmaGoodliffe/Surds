@@ -1,0 +1,38 @@
+{
+  "name": "surds",
+  "version": "1.0.0",
+  "description": "Exact maths",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npm run build:ts",
+    "build:ts": "tsc",
+    "dev": "",
+    "docs": "npm run build && api-extractor run --local && api-documenter markdown --input-folder temp --output-folder docs/md",
+    "lint": "eslint \".\" --fix && prettier \".\" --write",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EmmaGoodliffe/surds.git"
+  },
+  "author": "Emma Goodliffe",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EmmaGoodliffe/surds/issues"
+  },
+  "homepage": "https://github.com/EmmaGoodliffe/surds#readme",
+  "devDependencies": {
+    "@microsoft/api-documenter": "^7.13.12",
+    "@microsoft/api-extractor": "^7.15.2",
+    "@types/jest": "^26.0.23",
+    "@typescript-eslint/eslint-plugin": "^4.25.0",
+    "@typescript-eslint/parser": "^4.25.0",
+    "eslint": "^7.27.0",
+    "eslint-plugin-import": "^2.23.4",
+    "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^27.0.3",
+    "prettier": "^2.3.0",
+    "ts-jest": "^27.0.1",
+    "typescript": "^4.3.2"
+  }
+}
