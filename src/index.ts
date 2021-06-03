@@ -1,4 +1,5 @@
 type Sign = -1 | 0 | 1;
+type PowerFactors = Record<number, number>;
 
 interface Surd {
   simplify(): Surd;
@@ -28,6 +29,20 @@ const removeMany = <T>(arr: T[], xs: T[]) => {
   return result;
 };
 
+const removePowers = (a: PowerFactors, b: PowerFactors) => {
+  const result: PowerFactors = {};
+  for (const i in a) {
+    const factor = parseInt(i);
+    console.log({ a, b, factor });
+    const newPower = a[factor] - (b[factor] || 0);
+    if (newPower < 0) throw new Error("Negative power in power factorisation");
+    if (newPower > 0) {
+      result[factor] = newPower;
+    }
+  }
+  return result;
+};
+
 const getOverlap = <T>(a: T[], b: T[]): T[] => {
   for (const i in a) {
     const x = a[i];
@@ -37,6 +52,25 @@ const getOverlap = <T>(a: T[], b: T[]): T[] => {
   }
   return [];
 };
+
+const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
+  const aFactors = Object.keys(a);
+  const bFactors = Object.keys(b);
+  const commonFactors = getOverlap(aFactors, bFactors).map(f => parseInt(f));
+  const result: PowerFactors = {};
+  for (const factor of commonFactors) {
+    const overlapPower = Math.min(a[factor] || 0, b[factor] || 0);
+    if (overlapPower > 0) {
+      result[factor] = overlapPower;
+    }
+  }
+  return result;
+};
+
+const unique = <T>(arr: T[]) => Array.from(new Set(arr));
+
+const count = <T>(arr: T[], x: T) =>
+  arr.reduce((a, v) => (x === v ? a + 1 : a), 0);
 
 class Int implements Surd {
   constructor(public x: number) {
@@ -140,6 +174,42 @@ class Factorisation implements Surd {
   }
 }
 
+class PowerFactorisation implements Surd {
+  constructor(public factors: PowerFactors = {}, public sign: Sign) {
+    for (const factor in factors) {
+      if (parseInt(factor) < 0) {
+        throw new Error("Negative factor of power factorisation");
+      }
+    }
+  }
+  simplify(): Surd {
+    const factors = Object.keys(this.factors);
+    if (factors.length === 0) return new Int(1);
+    if (factors.length === 1) {
+      const factor = parseInt(factors[0]);
+      const power = this.factors[factor];
+      return new Power(new Int(factor), new Int(power)).simplify();
+    }
+    return this;
+  }
+  compute() {
+    let total = 1;
+    for (const factor in this.factors) {
+      const power = this.factors[factor];
+      total *= parseInt(factor) ** power;
+    }
+    return total;
+  }
+  static from(x: Factorisation) {
+    const factors: PowerFactors = {};
+    for (const factor of unique(x.factors)) {
+      const power = count(x.factors, factor);
+      factors[factor] = power;
+    }
+    return new PowerFactorisation(factors, x.sign);
+  }
+}
+
 class Fraction implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify(): Surd {
@@ -160,7 +230,22 @@ class Fraction implements Surd {
       if (den instanceof Int && den.compute() === 1) return num;
       return new Fraction(num, den);
     }
-    // TODO: powers
+    if (
+      this.a instanceof PowerFactorisation &&
+      this.b instanceof PowerFactorisation
+    ) {
+      if (this.a.sign === 0) return new Int(0);
+      if (this.b.sign === 0) throw new Error("0 division");
+      const sign = this.a.sign === this.b.sign ? 1 : -1;
+      const overlap = getPowerOverlap(this.a.factors, this.b.factors);
+      const aFactors = removePowers(this.a.factors, overlap);
+      const bFactors = removePowers(this.b.factors, overlap);
+      const num = new PowerFactorisation(aFactors, sign).simplify();
+      const den = new PowerFactorisation(bFactors, 1).simplify();
+      // TODO: convert to primes
+      if (den instanceof Int && den.compute() === 1) return num;
+      return new Fraction(num, den);
+    }
     return new Fraction(
       Factorisation.from(this.a),
       Factorisation.from(this.b),
@@ -174,7 +259,10 @@ class Fraction implements Surd {
 class Power implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    return this;
+    const a = this.a.simplify();
+    const b = this.b.simplify();
+    if (b instanceof Int && b.compute() === 1) return a;
+    return new Power(a, b);
   }
   compute() {
     return this.a.compute() ** this.b.compute();
