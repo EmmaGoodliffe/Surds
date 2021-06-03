@@ -39,7 +39,9 @@ const getOverlap = <T>(a: T[], b: T[]): T[] => {
 };
 
 class Int implements Surd {
-  constructor(public x: number) {}
+  constructor(public x: number) {
+    if (!isInt(x)) throw new Error("Not integer");
+  }
   simplify() {
     return this;
   }
@@ -106,9 +108,16 @@ class Factorisation implements Surd {
     }
     return new Factorisation(...pfs);
   }
-  static from(x: Surd) {
+  static from(x: Surd): Factorisation {
     if (x instanceof Factorisation) return x;
     if (x instanceof Int) return new Factorisation(x.compute());
+    if (x instanceof Mult) {
+      return new Factorisation(
+        ...Factorisation.from(x.a).factors,
+        ...Factorisation.from(x.b).factors,
+      );
+    }
+    if (x instanceof Factorial) return Factorisation.from(x.simplify());
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: number) {
@@ -151,6 +160,7 @@ class Fraction implements Surd {
       if (den instanceof Int && den.compute() === 1) return num;
       return new Fraction(num, den);
     }
+    // TODO: powers
     return new Fraction(
       Factorisation.from(this.a),
       Factorisation.from(this.b),
@@ -158,31 +168,6 @@ class Fraction implements Surd {
   }
   compute() {
     return this.a.compute() / this.b.compute();
-  }
-  static cf(a: number, b: number) {
-    if (a < 0 || b < 0) {
-      throw new Error("Negative");
-    }
-    const aLastDig = digits(a).slice(-1)[0];
-    const bLastDig = digits(b).slice(-1)[0];
-    const aLastDig0 = aLastDig === 0;
-    const bLastDig0 = bLastDig === 0;
-    const aLastDigBy5 = aLastDig === 5 || aLastDig0;
-    const bLastDigBy5 = bLastDig === 5 || bLastDig0;
-    const aLastDigEven = aLastDig % 2 === 0;
-    const bLastDigEven = bLastDig % 2 === 0;
-    const aSum = sumDigits(a);
-    const bSum = sumDigits(b);
-    const aSumBy9 = aSum % 9 === 0;
-    const bSumBy9 = bSum % 9 === 0;
-    const aSumBy3 = aSum % 3 === 0;
-    const bSumBy3 = bSum % 3 === 0;
-    if (aLastDig0 && bLastDig0) return 10;
-    if (aSumBy9 && bSumBy9) return 9;
-    if (aLastDigBy5 && bLastDigBy5) return 5;
-    if (aSumBy3 && bSumBy3) return 3;
-    if (aLastDigEven && bLastDigEven) return 2;
-    return 1;
   }
 }
 
@@ -193,5 +178,43 @@ class Power implements Surd {
   }
   compute() {
     return this.a.compute() ** this.b.compute();
+  }
+}
+
+class Factorial implements Surd {
+  constructor(public x: number) {
+    if (!isInt(x)) throw new Error("Not integer");
+  }
+  private maths() {
+    // x! = x * (x - 1) * ... * 2 * 1
+    const factors = [];
+    for (let n = this.x; n >= 1; n--) {
+      factors.push(n);
+    }
+    return new Factorisation(...factors);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
+  }
+}
+
+class Choose implements Surd {
+  constructor(public n: number, public r: number) {
+    if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
+  }
+  private maths() {
+    // nCr = (n!)/(r!(n - r)!)
+    const num = new Factorial(this.n);
+    const den = new Mult(new Factorial(this.r), new Factorial(this.n - this.r));
+    return new Fraction(num, den);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
   }
 }
