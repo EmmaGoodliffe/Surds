@@ -127,6 +127,7 @@ class Factorisation implements Surd {
     this.factors = factors.map(n => Math.abs(n)).filter(f => f !== 1);
   }
   simplify() {
+    if (this.sign === 0) return new Int(0);
     if (this.factors.length === 0) return new Int(1);
     if (this.factors.length === 1) return new Int(this.sign * this.factors[0]);
     return this;
@@ -205,7 +206,7 @@ class PowerFactorisation implements Surd {
       const parentFactor = parseInt(parentKey);
       const parentPower = this.factors[parentFactor];
       const pfs = Factorisation.pfs(parentFactor);
-      const powerPfs = PowerFactorisation.from(new Factorisation(...pfs));
+      const powerPfs = PowerFactorisation.from(...pfs);
       for (const key in powerPfs.factors) {
         const factor = parseInt(key);
         const power = powerPfs.factors[factor];
@@ -215,13 +216,14 @@ class PowerFactorisation implements Surd {
     }
     return new PowerFactorisation(result, this.sign);
   }
-  static from(x: Factorisation) {
-    const factors: PowerFactors = {};
+  static from(...factors: number[]) {
+    const x = new Factorisation(...factors);
+    const result: PowerFactors = {};
     for (const factor of unique(x.factors)) {
       const power = count(x.factors, factor);
-      factors[factor] = power;
+      result[factor] = power;
     }
-    return new PowerFactorisation(factors, x.sign);
+    return new PowerFactorisation(result, x.sign);
   }
 }
 
