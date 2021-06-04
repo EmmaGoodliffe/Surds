@@ -90,5 +90,6 @@ test("heads/tails", () => {
     return new SigmaSummation(lowerBound, upperBound, x => term(x, m, p));
   };
 
-  console.log(sum(5, 3, 2).simplify().terms);
+  const surd = sum(5, 3, 2);
+  console.log(`${surd.katex()} => ${surd.simplify().katex()}`);
 });

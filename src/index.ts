@@ -4,6 +4,7 @@ type PowerFactors = Record<number, number>;
 interface Surd {
   simplify(): Surd;
   compute(): number;
+  katex(): string;
 }
 
 const digits = (x: number) => {
@@ -73,6 +74,9 @@ export class Int implements Surd {
   compute() {
     return this.x;
   }
+  katex() {
+    return `${this.x}`;
+  }
 }
 
 export class Summation implements Surd {
@@ -82,6 +86,9 @@ export class Summation implements Surd {
   }
   compute() {
     return this.terms.reduce((a, t) => a + t.compute(), 0);
+  }
+  katex() {
+    return this.terms.map(t => `{${t.katex()}}`).join(" + ");
   }
 }
 
@@ -104,6 +111,9 @@ export class Sub implements Surd {
   compute() {
     return this.a.compute() - this.b.compute();
   }
+  katex() {
+    return `{${this.a.katex()}} - {${this.b.katex()}}`;
+  }
 }
 
 export class Mult implements Surd {
@@ -113,6 +123,9 @@ export class Mult implements Surd {
   }
   compute() {
     return this.a.compute() * this.b.compute();
+  }
+  katex() {
+    return `{${this.a.katex()}} \\times {${this.b.katex()}}`;
   }
 }
 
@@ -137,6 +150,9 @@ export class Factorisation implements Surd {
   }
   compute() {
     return this.factors.reduce((a, b) => a * b, 1);
+  }
+  katex() {
+    return [this.sign, ...this.factors].join(" \\times ");
   }
   toPfs() {
     const pfs: number[] = [];
@@ -204,6 +220,11 @@ export class PowerFactorisation implements Surd {
       return new Power(new Int(this.sign * factor), new Int(power)).simplify();
     }
     return this;
+  }
+  katex() {
+    return `${this.sign} \\times ${Object.keys(this.factors)
+      .map(key => `{${key}}^{${this.factors[parseInt(key)]}}`)
+      .join(" \\times ")}`;
   }
   compute() {
     let total = 1;
@@ -277,6 +298,9 @@ export class Fraction implements Surd {
   compute() {
     return this.num.compute() / this.den.compute();
   }
+  katex() {
+    return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
+  }
 }
 
 export class Power implements Surd {
@@ -291,6 +315,9 @@ export class Power implements Surd {
   }
   compute() {
     return this.base.compute() ** this.exponent.compute();
+  }
+  katex() {
+    return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
   }
 }
 
@@ -312,6 +339,9 @@ export class Factorial implements Surd {
   compute() {
     return this.maths().compute();
   }
+  katex() {
+    return `${this.x}!`;
+  }
 }
 
 export class Choose implements Surd {
@@ -330,6 +360,9 @@ export class Choose implements Surd {
   compute() {
     return this.maths().compute();
   }
+  katex() {
+    return `${this.n} \\choose ${this.r}`;
+  }
 }
 
 export class Permute implements Surd {
@@ -347,6 +380,9 @@ export class Permute implements Surd {
   }
   compute() {
     return this.maths().compute();
+  }
+  katex() {
+    return `{}_{${this.n}}P^{${this.r}}`;
   }
 }
 
@@ -376,6 +412,9 @@ export class SigmaSummation implements Surd {
   compute() {
     return this.maths().compute();
   }
+  katex() {
+    return "NEVER";
+  }
 }
 
 export class PiecewiseFunction implements Surd {
@@ -400,5 +439,8 @@ export class PiecewiseFunction implements Surd {
   }
   compute() {
     return this.maths().compute();
+  }
+  katex() {
+    return "NEVER";
   }
 }
