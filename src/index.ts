@@ -21,14 +21,6 @@ const remove = <T>(arr: T[], x: T) => {
   return result;
 };
 
-const removeMany = <T>(arr: T[], xs: T[]) => {
-  let result = [...arr];
-  for (const x of xs) {
-    result = remove(result, x);
-  }
-  return result;
-};
-
 const removePowers = (a: PowerFactors, b: PowerFactors) => {
   const result: PowerFactors = {};
   for (const i in a) {
@@ -71,7 +63,7 @@ const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 const count = <T>(arr: T[], x: T) =>
   arr.reduce((a, v) => (x === v ? a + 1 : a), 0);
 
-class Int implements Surd {
+export class Int implements Surd {
   constructor(public x: number) {
     if (!isInt(x)) throw new Error("Not integer");
   }
@@ -83,7 +75,7 @@ class Int implements Surd {
   }
 }
 
-class Summation implements Surd {
+export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
   simplify() {
     return new Summation(this.terms.map(t => t.simplify()));
@@ -93,23 +85,23 @@ class Summation implements Surd {
   }
 }
 
-class Add extends Summation {
+export class Add extends Summation {
   constructor(a: Surd, b: Surd) {
     super([a, b]);
   }
 }
 
-class Sub implements Surd {
+export class Sub implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    return this;
+    return new Sub(this.a.simplify(), this.b.simplify());
   }
   compute() {
     return this.a.compute() - this.b.compute();
   }
 }
 
-class Mult implements Surd {
+export class Mult implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
     return this;
@@ -119,7 +111,7 @@ class Mult implements Surd {
   }
 }
 
-class Factorisation implements Surd {
+export class Factorisation implements Surd {
   factors: number[];
   sign: Sign;
   constructor(...factors: number[]) {
@@ -139,7 +131,7 @@ class Factorisation implements Surd {
     return this;
   }
   compute() {
-    return this.factors.reduce((a, b) => a * b);
+    return this.factors.reduce((a, b) => a * b, 1);
   }
   toPfs() {
     const pfs: number[] = [];
@@ -157,7 +149,15 @@ class Factorisation implements Surd {
         ...Factorisation.from(x.b).factors,
       );
     }
+    if (x instanceof Power && x.exponent instanceof Int) {
+      const ex = x.exponent.compute();
+      const surds = Array(ex).fill(x.base);
+      const factorisations = surds.map(s => Factorisation.from(s));
+      const factors = factorisations.map(f => f.factors).flat();
+      return new Factorisation(...factors);
+    }
     if (x instanceof Factorial) return Factorisation.from(x.simplify());
+    if (x instanceof PiecewiseFunction) return Factorisation.from(x.simplify());
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: number) {
@@ -180,7 +180,7 @@ class Factorisation implements Surd {
   }
 }
 
-class PowerFactorisation implements Surd {
+export class PowerFactorisation implements Surd {
   constructor(public factors: PowerFactors = {}, public sign: Sign) {
     for (const factor in factors) {
       if (parseInt(factor) < 0) {
@@ -206,7 +206,7 @@ class PowerFactorisation implements Surd {
       const power = this.factors[factor];
       total *= parseInt(factor) ** power;
     }
-    return total;
+    return this.sign * total;
   }
   toPfs() {
     const result: PowerFactors = {};
@@ -236,7 +236,7 @@ class PowerFactorisation implements Surd {
   }
 }
 
-class Fraction implements Surd {
+export class Fraction implements Surd {
   constructor(public num: Surd, public den: Surd) {}
   simplify(): Surd {
     if (
@@ -259,17 +259,22 @@ class Fraction implements Surd {
       if (den instanceof Int && den.compute() === 1) return num;
       return new Fraction(num, den);
     }
-    return new Fraction(
-      PowerFactorisation.from(this.num),
-      PowerFactorisation.from(this.den),
-    ).simplify();
+    try {
+      return new Fraction(
+        PowerFactorisation.from(this.num),
+        PowerFactorisation.from(this.den),
+      ).simplify();
+    } catch (err) {
+      if (!`${err}`.includes("convert to factorisation")) throw err;
+      return new Fraction(this.num.simplify(), this.den.simplify());
+    }
   }
   compute() {
     return this.num.compute() / this.den.compute();
   }
 }
 
-class Power implements Surd {
+export class Power implements Surd {
   constructor(public base: Surd, public exponent: Surd) {}
   simplify() {
     const base = this.base.simplify();
@@ -284,7 +289,7 @@ class Power implements Surd {
   }
 }
 
-class Factorial implements Surd {
+export class Factorial implements Surd {
   constructor(public x: number) {
     if (!isInt(x)) throw new Error("Not integer");
   }
@@ -304,7 +309,7 @@ class Factorial implements Surd {
   }
 }
 
-class Choose implements Surd {
+export class Choose implements Surd {
   constructor(public n: number, public r: number) {
     if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
   }
@@ -322,7 +327,7 @@ class Choose implements Surd {
   }
 }
 
-class Permute implements Surd {
+export class Permute implements Surd {
   constructor(public n: number, public r: number) {
     if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
   }
@@ -340,7 +345,7 @@ class Permute implements Surd {
   }
 }
 
-class SigmaSummation implements Surd {
+export class SigmaSummation implements Surd {
   constructor(
     public lowerBound: Int,
     public upperBound: Int,
@@ -359,6 +364,31 @@ class SigmaSummation implements Surd {
       terms.push(term);
     }
     return new Summation(terms);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
+  }
+}
+
+export class PiecewiseFunction implements Surd {
+  constructor(
+    public pieces: {
+      expression: (args: number[]) => Surd;
+      condition: (args: number[]) => boolean;
+    }[],
+    public args: number[],
+    public otherwise: (args: number[]) => Surd,
+  ) {}
+  private maths() {
+    for (const piece of this.pieces) {
+      if (piece.condition(this.args)) {
+        return piece.expression(this.args);
+      }
+    }
+    return this.otherwise(this.args);
   }
   simplify() {
     return this.maths().simplify();
