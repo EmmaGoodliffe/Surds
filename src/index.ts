@@ -99,10 +99,13 @@ class Add extends Summation {
   }
 }
 
-class Sub extends Add {
-  constructor(a: Surd, b: Surd) {
-    const negativeB = new Mult(new Int(-1), b);
-    super(a, negativeB);
+class Sub implements Surd {
+  constructor(public a: Surd, public b: Surd) {}
+  simplify() {
+    return this;
+  }
+  compute() {
+    return this.a.compute() - this.b.compute();
   }
 }
 
