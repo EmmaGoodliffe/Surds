@@ -128,7 +128,7 @@ class Factorisation implements Surd {
   }
   simplify() {
     if (this.sign === 0) return new Int(0);
-    if (this.factors.length === 0) return new Int(1);
+    if (this.factors.length === 0) return new Int(this.sign);
     if (this.factors.length === 1) return new Int(this.sign * this.factors[0]);
     return this;
   }
