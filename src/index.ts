@@ -231,18 +231,18 @@ class PowerFactorisation implements Surd {
 }
 
 class Fraction implements Surd {
-  constructor(public a: Surd, public b: Surd) {}
+  constructor(public num: Surd, public den: Surd) {}
   simplify(): Surd {
     if (
-      this.a instanceof PowerFactorisation &&
-      this.b instanceof PowerFactorisation
+      this.num instanceof PowerFactorisation &&
+      this.den instanceof PowerFactorisation
     ) {
-      if (this.a.sign === 0) return new Int(0);
-      if (this.b.sign === 0) throw new Error("0 division");
-      const sign = this.a.sign === this.b.sign ? 1 : -1;
-      const overlap = getPowerOverlap(this.a.factors, this.b.factors);
-      const newA = removePowers(this.a.factors, overlap);
-      const newB = removePowers(this.b.factors, overlap);
+      if (this.num.sign === 0) return new Int(0);
+      if (this.den.sign === 0) throw new Error("0 division");
+      const sign = this.num.sign === this.den.sign ? 1 : -1;
+      const overlap = getPowerOverlap(this.num.factors, this.den.factors);
+      const newA = removePowers(this.num.factors, overlap);
+      const newB = removePowers(this.den.factors, overlap);
       const aPfs = new PowerFactorisation(newA, 1).toPfs();
       const bPfs = new PowerFactorisation(newB, 1).toPfs();
       const pfOverlap = getPowerOverlap(aPfs.factors, bPfs.factors);
@@ -254,27 +254,27 @@ class Fraction implements Surd {
       return new Fraction(num, den);
     }
     return new Fraction(
-      PowerFactorisation.from(this.a),
-      PowerFactorisation.from(this.b),
+      PowerFactorisation.from(this.num),
+      PowerFactorisation.from(this.den),
     ).simplify();
   }
   compute() {
-    return this.a.compute() / this.b.compute();
+    return this.num.compute() / this.den.compute();
   }
 }
 
 class Power implements Surd {
-  constructor(public a: Surd, public b: Surd) {}
+  constructor(public base: Surd, public exponent: Surd) {}
   simplify() {
-    const a = this.a.simplify();
-    const b = this.b.simplify();
-    if (b instanceof Int && b.compute() === 1) return a;
-    if (a instanceof Int && a.compute() === 0) return a;
-    if (a instanceof Int && a.compute() === 1) return a;
-    return new Power(a, b);
+    const base = this.base.simplify();
+    const ex = this.exponent.simplify();
+    if (ex instanceof Int && ex.compute() === 1) return base;
+    if (base instanceof Int && base.compute() === 0) return base;
+    if (base instanceof Int && base.compute() === 1) return base;
+    return new Power(base, ex);
   }
   compute() {
-    return this.a.compute() ** this.b.compute();
+    return this.base.compute() ** this.exponent.compute();
   }
 }
 
@@ -325,6 +325,44 @@ class Permute implements Surd {
     const num = new Factorial(this.n);
     const den = new Factorial(this.n - this.r);
     return new Fraction(num, den);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
+  }
+}
+
+class Summation implements Surd {
+  constructor(public terms: Surd[]) {}
+  simplify() {
+    return new Summation(this.terms.map(t => t.simplify()));
+  }
+  compute() {
+    return this.terms.reduce((a, t) => a + t.compute(), 0);
+  }
+}
+
+class SigmaSummation implements Surd {
+  constructor(
+    public lowerBound: Int,
+    public upperBound: Int,
+    public term: (x: number) => Surd,
+  ) {
+    if (lowerBound > upperBound) {
+      throw new Error("Lower bigger than upper bound");
+    }
+  }
+  private maths() {
+    const l = this.lowerBound.compute();
+    const u = this.upperBound.compute();
+    const terms = [];
+    for (let i = l; i <= u; i++) {
+      const term = this.term(i);
+      terms.push(term);
+    }
+    return new Summation(terms);
   }
   simplify() {
     return this.maths().simplify();
