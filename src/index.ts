@@ -83,23 +83,26 @@ class Int implements Surd {
   }
 }
 
-class Add implements Surd {
-  constructor(public a: Surd, public b: Surd) {}
+class Summation implements Surd {
+  constructor(public terms: Surd[]) {}
   simplify() {
-    return this;
+    return new Summation(this.terms.map(t => t.simplify()));
   }
   compute() {
-    return this.a.compute() + this.b.compute();
+    return this.terms.reduce((a, t) => a + t.compute(), 0);
   }
 }
 
-class Sub implements Surd {
-  constructor(public a: Surd, public b: Surd) {}
-  simplify() {
-    return this;
+class Add extends Summation {
+  constructor(a: Surd, b: Surd) {
+    super([a, b]);
   }
-  compute() {
-    return this.a.compute() - this.b.compute();
+}
+
+class Sub extends Add {
+  constructor(a: Surd, b: Surd) {
+    const negativeB = new Mult(new Int(-1), b);
+    super(a, negativeB);
   }
 }
 
@@ -331,16 +334,6 @@ class Permute implements Surd {
   }
   compute() {
     return this.maths().compute();
-  }
-}
-
-class Summation implements Surd {
-  constructor(public terms: Surd[]) {}
-  simplify() {
-    return new Summation(this.terms.map(t => t.simplify()));
-  }
-  compute() {
-    return this.terms.reduce((a, t) => a + t.compute(), 0);
   }
 }
 
