@@ -94,10 +94,10 @@ export class Variable implements Surd {
 
 export class Func<T extends Surd[]> implements Surd {
   constructor(
-    public run: (v: T) => Surd,
+    public run: (args: T) => Surd,
     public args: T,
     public symbol = "f",
-    public argSymbol = "x",
+    public argSymbols = ["x"],
   ) {}
   private maths() {
     // f(x) = f(x)
@@ -110,9 +110,8 @@ export class Func<T extends Surd[]> implements Surd {
     return this.maths().compute();
   }
   katex() {
-    return `${this.symbol}(${this.argSymbol})`;
+    return `${this.symbol}(${this.argSymbols.join(", ")})`;
   }
-  // TODO: expression
 }
 
 export class Summation implements Surd {
@@ -425,7 +424,7 @@ export class SigmaSummation implements Surd {
   constructor(
     public lowerBound: Int,
     public upperBound: Int,
-    public term: (x: Int) => Surd,
+    public term: (x: Int | Variable) => Surd,
     public indexSymbol = "i",
   ) {
     if (lowerBound > upperBound) {
@@ -449,11 +448,9 @@ export class SigmaSummation implements Surd {
     return this.maths().compute();
   }
   katex() {
-    // const l = this.lowerBound.compute();
-    // const u = this.upperBound.compute();
-    // const term = this.term(new Variable(this.indexSymbol)).katex();
-    // return `\\sum_{${this.indexSymbol} = ${l}}^{${u}} {${term}}`;
-    // TODO: fix
-    return "TBC";
+    const l = this.lowerBound.compute();
+    const u = this.upperBound.compute();
+    const term = this.term(new Variable(this.indexSymbol)).katex();
+    return `\\sum_{${this.indexSymbol} = ${l}}^{${u}} {${term}}`;
   }
 }

@@ -63,8 +63,14 @@ test("heads/tails", () => {
     }
   };
 
-  const term = (x: Int, m: number, p: number, indexSymbol: string) => {
-    const num = new Func(f, [x, new Int(m - p)]).simplify();
+  const term = (
+    x: Int | Variable,
+    m: number,
+    p: number,
+    indexSymbol: string,
+  ) => {
+    const args = [x, new Int(m - p)] as Int[];
+    const num = new Func(f, args, "f", [indexSymbol, `${m - p}`]);
     const den = new Power(new Int(2), x);
     return new Fraction(num, den);
   };
@@ -80,7 +86,7 @@ test("heads/tails", () => {
     );
   };
 
-  const surd = sum(5, 3, 2, "i");
+  const surd = sum(5, 3, 2, "x");
   expect(surd.simplify().compute()).toBe(11 / 16);
   console.log(`${surd.katex()} = ${surd.simplify().katex()}`);
 });
