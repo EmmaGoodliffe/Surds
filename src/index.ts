@@ -33,7 +33,6 @@ const removePowers = (a: PowerFactors, b: PowerFactors) => {
   const result: PowerFactors = {};
   for (const i in a) {
     const factor = parseInt(i);
-    console.log({ a, b, factor });
     const newPower = a[factor] - (b[factor] || 0);
     if (newPower < 0) throw new Error("Negative power in power factorisation");
     if (newPower > 0) {
@@ -200,6 +199,22 @@ class PowerFactorisation implements Surd {
     }
     return total;
   }
+  toPfs() {
+    const result: PowerFactors = {};
+    for (const parentKey in this.factors) {
+      const parentFactor = parseInt(parentKey);
+      const parentPower = this.factors[parentFactor];
+      const pfs = Factorisation.pfs(parentFactor);
+      const powerPfs = PowerFactorisation.from(new Factorisation(...pfs));
+      for (const key in powerPfs.factors) {
+        const factor = parseInt(key);
+        const power = powerPfs.factors[factor];
+        const totalPower = parentPower * power;
+        result[factor] = (result[factor] || 0) + totalPower;
+      }
+    }
+    return new PowerFactorisation(result, this.sign);
+  }
   static from(x: Factorisation) {
     const factors: PowerFactors = {};
     for (const factor of unique(x.factors)) {
@@ -238,11 +253,15 @@ class Fraction implements Surd {
       if (this.b.sign === 0) throw new Error("0 division");
       const sign = this.a.sign === this.b.sign ? 1 : -1;
       const overlap = getPowerOverlap(this.a.factors, this.b.factors);
-      const aFactors = removePowers(this.a.factors, overlap);
-      const bFactors = removePowers(this.b.factors, overlap);
-      const num = new PowerFactorisation(aFactors, sign).simplify();
-      const den = new PowerFactorisation(bFactors, 1).simplify();
-      // TODO: convert to primes
+      const newA = removePowers(this.a.factors, overlap);
+      const newB = removePowers(this.b.factors, overlap);
+      const aPfs = new PowerFactorisation(newA, 1).toPfs();
+      const bPfs = new PowerFactorisation(newB, 1).toPfs();
+      const pfOverlap = getPowerOverlap(aPfs.factors, bPfs.factors);
+      const newAPfs = removePowers(aPfs.factors, pfOverlap);
+      const newBPfs = removePowers(bPfs.factors, pfOverlap);
+      const num = new PowerFactorisation(newAPfs, sign).simplify();
+      const den = new PowerFactorisation(newBPfs, 1).simplify();
       if (den instanceof Int && den.compute() === 1) return num;
       return new Fraction(num, den);
     }
