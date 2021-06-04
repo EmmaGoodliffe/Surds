@@ -94,7 +94,12 @@ export class Add extends Summation {
 export class Sub implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    return new Sub(this.a.simplify(), this.b.simplify());
+    const a = this.a.simplify();
+    const b = this.b.simplify();
+    if (a instanceof Int && b instanceof Int) {
+      return new Int(a.compute() - b.compute());
+    }
+    return new Sub(a, b);
   }
   compute() {
     return this.a.compute() - this.b.compute();
