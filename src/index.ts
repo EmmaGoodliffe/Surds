@@ -315,3 +315,21 @@ class Choose implements Surd {
     return this.maths().compute();
   }
 }
+
+class Permute implements Surd {
+  constructor(public n: number, public r: number) {
+    if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
+  }
+  private maths() {
+    // nPr = (n!)/((n - r)!)
+    const num = new Factorial(this.n);
+    const den = new Factorial(this.n - this.r);
+    return new Fraction(num, den);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
+  }
+}
