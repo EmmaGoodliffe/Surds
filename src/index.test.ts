@@ -4,6 +4,7 @@ import {
   Factorial,
   Factorisation,
   Fraction,
+  Func,
   Int,
   Mult,
   Permute,
@@ -50,7 +51,9 @@ test("new", () => {
 // TODO: from
 
 test("heads/tails", () => {
-  const f = (x: number, d: number) => {
+  const f = ([xi, di]: Int[]) => {
+    const x = xi.compute();
+    const d = di.compute();
     if (x < 1 || x - d < 1) {
       return new Int(1);
     } else {
@@ -60,18 +63,8 @@ test("heads/tails", () => {
     }
   };
 
-  const term = (
-    x: Int | Variable,
-    m: number,
-    p: number,
-    indexSymbol: string,
-  ) => {
-    if (x instanceof Variable) {
-      const num = new Variable(`f(${indexSymbol}, ${m} - ${p})`);
-      const den = new Power(new Int(2), new Variable(indexSymbol));
-      return new Fraction(num, den);
-    }
-    const num = f(x.compute(), m - p);
+  const term = (x: Int, m: number, p: number, indexSymbol: string) => {
+    const num = new Func(f, [x, new Int(m - p)]).simplify();
     const den = new Power(new Int(2), x);
     return new Fraction(num, den);
   };

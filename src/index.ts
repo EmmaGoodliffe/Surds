@@ -79,6 +79,42 @@ export class Int implements Surd {
   }
 }
 
+export class Variable implements Surd {
+  constructor(public symbol: string) {}
+  simplify() {
+    return this;
+  }
+  compute(): never {
+    throw new Error("Impossible to compute surd containing variable");
+  }
+  katex() {
+    return this.symbol;
+  }
+}
+
+export class Func<T extends Surd[]> implements Surd {
+  constructor(
+    public run: (v: T) => Surd,
+    public args: T,
+    public symbol = "f",
+    public argSymbol = "x",
+  ) {}
+  private maths() {
+    // f(x) = f(x)
+    return this.run(this.args);
+  }
+  simplify() {
+    return this.maths().simplify();
+  }
+  compute() {
+    return this.maths().compute();
+  }
+  katex() {
+    return `${this.symbol}(${this.argSymbol})`;
+  }
+  // TODO: expression
+}
+
 export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
   simplify() {
@@ -178,7 +214,6 @@ export class Factorisation implements Surd {
       return new Factorisation(...factors);
     }
     if (x instanceof Factorial) return Factorisation.from(x.simplify());
-    if (x instanceof PiecewiseFunction) return Factorisation.from(x.simplify());
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: number) {
@@ -390,7 +425,8 @@ export class SigmaSummation implements Surd {
   constructor(
     public lowerBound: Int,
     public upperBound: Int,
-    public term: (x: number) => Surd,
+    public term: (x: Int) => Surd,
+    public indexSymbol = "i",
   ) {
     if (lowerBound > upperBound) {
       throw new Error("Lower bigger than upper bound");
@@ -401,7 +437,7 @@ export class SigmaSummation implements Surd {
     const u = this.upperBound.compute();
     const terms = [];
     for (let i = l; i <= u; i++) {
-      const term = this.term(i);
+      const term = this.term(new Int(i));
       terms.push(term);
     }
     return new Summation(terms);
@@ -413,34 +449,11 @@ export class SigmaSummation implements Surd {
     return this.maths().compute();
   }
   katex() {
-    return "NEVER";
-  }
-}
-
-export class PiecewiseFunction implements Surd {
-  constructor(
-    public pieces: {
-      expression: (args: number[]) => Surd;
-      condition: (args: number[]) => boolean;
-    }[],
-    public args: number[],
-    public otherwise: (args: number[]) => Surd,
-  ) {}
-  private maths() {
-    for (const piece of this.pieces) {
-      if (piece.condition(this.args)) {
-        return piece.expression(this.args);
-      }
-    }
-    return this.otherwise(this.args);
-  }
-  simplify() {
-    return this.maths().simplify();
-  }
-  compute() {
-    return this.maths().compute();
-  }
-  katex() {
-    return "NEVER";
+    // const l = this.lowerBound.compute();
+    // const u = this.upperBound.compute();
+    // const term = this.term(new Variable(this.indexSymbol)).katex();
+    // return `\\sum_{${this.indexSymbol} = ${l}}^{${u}} {${term}}`;
+    // TODO: fix
+    return "TBC";
   }
 }
