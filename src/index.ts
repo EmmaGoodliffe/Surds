@@ -180,15 +180,17 @@ class PowerFactorisation implements Surd {
       if (parseInt(factor) < 0) {
         throw new Error("Negative factor of power factorisation");
       }
+      if (parseInt(factor) === 0) return new PowerFactorisation({}, 0);
     }
   }
   simplify(): Surd {
+    if (this.sign === 0) return new Int(0);
     const factors = Object.keys(this.factors);
-    if (factors.length === 0) return new Int(1);
+    if (factors.length === 0) return new Int(this.sign);
     if (factors.length === 1) {
       const factor = parseInt(factors[0]);
       const power = this.factors[factor];
-      return new Power(new Int(factor), new Int(power)).simplify();
+      return new Power(new Int(this.sign * factor), new Int(power)).simplify();
     }
     return this;
   }
@@ -217,6 +219,7 @@ class PowerFactorisation implements Surd {
     return new PowerFactorisation(result, this.sign);
   }
   static from(x: Surd) {
+    if (x instanceof PowerFactorisation) return x;
     const f = Factorisation.from(x);
     const result: PowerFactors = {};
     for (const factor of unique(f.factors)) {
@@ -230,23 +233,6 @@ class PowerFactorisation implements Surd {
 class Fraction implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify(): Surd {
-    // if (this.a instanceof Factorisation && this.b instanceof Factorisation) {
-    //   if (this.a.sign === 0) return new Int(0);
-    //   if (this.b.sign === 0) throw new Error("0 division");
-    //   const sign = this.a.sign === this.b.sign ? 1 : -1;
-    //   const overlap = getOverlap(this.a.factors, this.b.factors);
-    //   const newA = removeMany(this.a.factors, overlap);
-    //   const newB = removeMany(this.b.factors, overlap);
-    //   const aPfs = new Factorisation(...newA).toPfs();
-    //   const bPfs = new Factorisation(...newB).toPfs();
-    //   const pfOverlap = getOverlap(aPfs.factors, bPfs.factors);
-    //   const newAPfs = removeMany(aPfs.factors, pfOverlap);
-    //   const newBPfs = removeMany(bPfs.factors, pfOverlap);
-    //   const num = new Factorisation(...newAPfs, sign).simplify();
-    //   const den = new Factorisation(...newBPfs).simplify();
-    //   if (den instanceof Int && den.compute() === 1) return num;
-    //   return new Fraction(num, den);
-    // }
     if (
       this.a instanceof PowerFactorisation &&
       this.b instanceof PowerFactorisation
@@ -283,6 +269,8 @@ class Power implements Surd {
     const a = this.a.simplify();
     const b = this.b.simplify();
     if (b instanceof Int && b.compute() === 1) return a;
+    if (a instanceof Int && a.compute() === 0) return a;
+    if (a instanceof Int && a.compute() === 1) return a;
     return new Power(a, b);
   }
   compute() {
