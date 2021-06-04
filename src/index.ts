@@ -5,6 +5,7 @@ interface Surd {
   simplify(): Surd;
   compute(): number;
   katex(): string;
+  preferablyInt(): Surd;
 }
 
 const digits = (x: number) => {
@@ -12,7 +13,7 @@ const digits = (x: number) => {
   return `${x}`.split("").map(d => parseInt(d));
 };
 
-const sumDigits = (x: number) => digits(x).reduce((a, b) => a + b);
+const sumDigits = (x: number) => digits(x).reduce((a, b) => a + b, 0);
 
 const isInt = (x: number) => x === Math.floor(x);
 
@@ -77,6 +78,9 @@ export class Int implements Surd {
   katex() {
     return `${this.x}`;
   }
+  preferablyInt() {
+    return this;
+  }
 }
 
 export class Variable implements Surd {
@@ -89,6 +93,9 @@ export class Variable implements Surd {
   }
   katex() {
     return this.symbol;
+  }
+  preferablyInt() {
+    return this;
   }
 }
 
@@ -112,18 +119,32 @@ export class Func<T extends Surd[]> implements Surd {
   katex() {
     return `${this.symbol}(${this.argSymbols.join(", ")})`;
   }
+  preferablyInt() {
+    return this.maths().preferablyInt();
+  }
 }
 
 export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
-  simplify() {
-    return new Summation(this.terms.map(t => t.simplify()));
+  simplify(): Surd {
+    const terms = this.terms.map(t => t.simplify().preferablyInt());
+    const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+    const nonIntegers = terms.filter(t => !(t instanceof Int));
+    const intSum = integers.reduce((a, b) => a + b, 0);
+    const newTerms =
+      intSum === 0 ? nonIntegers : [new Int(intSum), ...nonIntegers];
+    if (newTerms.length === 0) return new Int(0);
+    if (newTerms.length === 1) return newTerms[0];
+    return new Summation(newTerms);
   }
   compute() {
     return this.terms.reduce((a, t) => a + t.compute(), 0);
   }
   katex() {
     return this.terms.map(t => `{${t.katex()}}`).join(" + ");
+  }
+  preferablyInt() {
+    return this;
   }
 }
 
@@ -136,8 +157,8 @@ export class Add extends Summation {
 export class Sub implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    const a = this.a.simplify();
-    const b = this.b.simplify();
+    const a = this.a.simplify().preferablyInt();
+    const b = this.b.simplify().preferablyInt();
     if (a instanceof Int && b instanceof Int) {
       return new Int(a.compute() - b.compute());
     }
@@ -148,6 +169,9 @@ export class Sub implements Surd {
   }
   katex() {
     return `{${this.a.katex()}} - {${this.b.katex()}}`;
+  }
+  preferablyInt() {
+    return this;
   }
 }
 
@@ -161,6 +185,14 @@ export class Mult implements Surd {
   }
   katex() {
     return `{${this.a.katex()}} \\times {${this.b.katex()}}`;
+  }
+  preferablyInt() {
+    const a = this.a.preferablyInt();
+    const b = this.b.preferablyInt();
+    if (a instanceof Int && b instanceof Int) {
+      return new Int(a.compute() * b.compute());
+    }
+    return this;
   }
 }
 
@@ -188,6 +220,9 @@ export class Factorisation implements Surd {
   }
   katex() {
     return [this.sign, ...this.factors].join(" \\times ");
+  }
+  preferablyInt() {
+    return new Int(this.compute());
   }
   toPfs() {
     const pfs: number[] = [];
@@ -229,7 +264,7 @@ export class Factorisation implements Surd {
   }
   static pfs(x: number): number[] {
     const factors = Factorisation.pf(x);
-    const leftOver = x / factors.reduce((a, b) => a * b);
+    const leftOver = x / factors.reduce((a, b) => a * b, 1);
     if (factors[0] === 1) return [leftOver];
     return [...factors, ...Factorisation.pfs(leftOver)].filter(f => f !== 1);
   }
@@ -259,6 +294,9 @@ export class PowerFactorisation implements Surd {
     return `${this.sign} \\times ${Object.keys(this.factors)
       .map(key => `{${key}}^{${this.factors[parseInt(key)]}}`)
       .join(" \\times ")}`;
+  }
+  preferablyInt() {
+    return new Int(this.compute());
   }
   compute() {
     let total = 1;
@@ -335,6 +373,9 @@ export class Fraction implements Surd {
   katex() {
     return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
   }
+  preferablyInt() {
+    return this;
+  }
 }
 
 export class Power implements Surd {
@@ -352,6 +393,14 @@ export class Power implements Surd {
   }
   katex() {
     return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
+  }
+  preferablyInt() {
+    const base = this.base.preferablyInt()
+    const ex = this.exponent.preferablyInt()
+    if (base instanceof Int && ex instanceof Int) {
+      return new Int(base.compute() ** ex.compute());
+    }
+    return this;
   }
 }
 
@@ -376,6 +425,9 @@ export class Factorial implements Surd {
   katex() {
     return `${this.x}!`;
   }
+  preferablyInt() {
+    return this.maths().preferablyInt();
+  }
 }
 
 export class Choose implements Surd {
@@ -397,6 +449,9 @@ export class Choose implements Surd {
   katex() {
     return `${this.n} \\choose ${this.r}`;
   }
+  preferablyInt() {
+    return this.maths().preferablyInt();
+  }
 }
 
 export class Permute implements Surd {
@@ -417,6 +472,9 @@ export class Permute implements Surd {
   }
   katex() {
     return `{}_{${this.n}}P^{${this.r}}`;
+  }
+  preferablyInt() {
+    return this.maths().preferablyInt();
   }
 }
 
@@ -452,5 +510,8 @@ export class SigmaSummation implements Surd {
     const u = this.upperBound.compute();
     const term = this.term(new Variable(this.indexSymbol)).katex();
     return `\\sum_{${this.indexSymbol} = ${l}}^{${u}} {${term}}`;
+  }
+  preferablyInt() {
+    return this.maths().preferablyInt();
   }
 }
