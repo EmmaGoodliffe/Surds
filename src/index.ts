@@ -173,11 +173,8 @@ export class Add extends Summation {
 export class Sub implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    const a = this.a.simplify().preferablyInt();
-    const b = this.b.simplify().preferablyInt();
-    if (a instanceof Int && b instanceof Int) {
-      return new Int(a.compute() - b.compute());
-    }
+    const a = this.a.simplify();
+    const b = this.b.simplify();
     return new Sub(a, b);
   }
   compute() {
@@ -187,6 +184,11 @@ export class Sub implements Surd {
     return `{${this.a.katex()}} - {${this.b.katex()}}`;
   }
   preferablyInt() {
+    const a = this.a.simplify().preferablyInt();
+    const b = this.b.simplify().preferablyInt();
+    if (a instanceof Int && b instanceof Int) {
+      return new Int(a.compute() - b.compute());
+    }
     return this;
   }
 }
@@ -194,7 +196,9 @@ export class Sub implements Surd {
 export class Mult implements Surd {
   constructor(public a: Surd, public b: Surd) {}
   simplify() {
-    return this;
+    const a = this.a.simplify();
+    const b = this.b.simplify();
+    return new Mult(a, b);
   }
   compute() {
     return this.a.compute() * this.b.compute();
@@ -203,8 +207,8 @@ export class Mult implements Surd {
     return `{${this.a.katex()}} \\times {${this.b.katex()}}`;
   }
   preferablyInt() {
-    const a = this.a.preferablyInt();
-    const b = this.b.preferablyInt();
+    const a = this.a.simplify().preferablyInt();
+    const b = this.b.simplify().preferablyInt();
     if (a instanceof Int && b instanceof Int) {
       return new Int(a.compute() * b.compute());
     }
@@ -264,6 +268,8 @@ export class Factorisation implements Surd {
       return new Factorisation(...factors);
     }
     if (x instanceof Factorial) return Factorisation.from(x.simplify());
+    const intX = x.simplify().preferablyInt();
+    if (intX instanceof Int) return Factorisation.from(intX);
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: number) {
@@ -390,6 +396,8 @@ export class Fraction implements Surd {
     return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
   }
   preferablyInt() {
+    const simple = this.simplify();
+    if (simple instanceof Int) return simple;
     return this;
   }
   static add(a: Fraction, b: Fraction) {
@@ -421,8 +429,8 @@ export class Power implements Surd {
     return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
   }
   preferablyInt() {
-    const base = this.base.preferablyInt();
-    const ex = this.exponent.preferablyInt();
+    const base = this.base.simplify().preferablyInt();
+    const ex = this.exponent.simplify().preferablyInt();
     if (base instanceof Int && ex instanceof Int) {
       return new Int(base.compute() ** ex.compute());
     }
@@ -473,7 +481,7 @@ export class Choose implements Surd {
     return this.maths().compute();
   }
   katex() {
-    return `${this.n} \\choose ${this.r}`;
+    return `{${this.n} \\choose ${this.r}}`;
   }
   preferablyInt() {
     return this.maths().preferablyInt();
