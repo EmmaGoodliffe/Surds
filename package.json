@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npm run build:ts",
     "build:ts": "tsc",
-    "dev": "ts-node src/index.ts",
+    "dev": "ts-node src/dev.ts",
     "docs": "npm run build && api-extractor run --local && api-documenter markdown --input-folder temp --output-folder docs/md",
     "lint": "eslint \".\" --fix && prettier \".\" --write",
     "test": "jest"

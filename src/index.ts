@@ -1,3 +1,5 @@
+import { appendFileSync as write } from "fs";
+
 type Sign = -1 | 0 | 1;
 type PowerFactors = Record<number, number>;
 
@@ -69,6 +71,12 @@ const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 const count = <T>(arr: T[], x: T) =>
   arr.reduce((a, v) => (x === v ? a + 1 : a), 0);
 
+const log = (from: Surd, to: Surd) =>
+  write(
+    "./log.md",
+    ["$$", `${from.katex()} = ${to.katex()}`, "$$", "", ""].join("\n"),
+  );
+
 export class Int implements Surd {
   constructor(public x: number) {
     if (!isInt(x)) throw new Error("Not integer");
@@ -112,7 +120,9 @@ export class Func<T extends Surd[]> implements Surd {
   ) {}
   private maths() {
     // f(x) = f(x)
-    return this.run(this.args);
+    const result = this.run(this.args);
+    log(this, result);
+    return result;
   }
   simplify() {
     return this.maths().simplify();
@@ -144,9 +154,11 @@ export class Summation implements Surd {
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
     const summedTerms = [new Int(intSum), fractionSum, ...other];
     const newTerms = summedTerms.filter(t => !isZero(t));
+    const result = new Summation(newTerms);
+    log(this, result);
     if (newTerms.length === 0) return new Int(0);
     if (newTerms.length === 1) return newTerms[0];
-    return new Summation(newTerms);
+    return result;
   }
   compute() {
     return this.terms.reduce((a, t) => a + t.compute(), 0);
@@ -158,7 +170,9 @@ export class Summation implements Surd {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
     const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
     if (integers.length === terms.length) {
-      return new Int(integers.reduce((a, b) => a + b, 0));
+      const result = new Int(integers.reduce((a, b) => a + b, 0));
+      log(this, result);
+      return result;
     }
     return this;
   }
@@ -187,7 +201,9 @@ export class Sub implements Surd {
     const a = this.a.simplify().preferablyInt();
     const b = this.b.simplify().preferablyInt();
     if (a instanceof Int && b instanceof Int) {
-      return new Int(a.compute() - b.compute());
+      const result = new Int(a.compute() - b.compute());
+      log(this, result);
+      return result;
     }
     return this;
   }
@@ -308,6 +324,7 @@ export class PowerFactorisation implements Surd {
     if (factors.length === 1) {
       const factor = parseInt(factors[0]);
       const power = this.factors[factor];
+      // TODO: make sign external
       return new Power(new Int(this.sign * factor), new Int(power)).simplify();
     }
     return this;
@@ -376,8 +393,10 @@ export class Fraction implements Surd {
       const newBPfs = removePowers(bPfs.factors, pfOverlap);
       const num = new PowerFactorisation(newAPfs, sign).simplify();
       const den = new PowerFactorisation(newBPfs, 1).simplify();
+      const result = new Fraction(num, den);
+      log(this, result);
       if (isOne(den)) return num;
-      return new Fraction(num, den);
+      return result;
     }
     try {
       return new Fraction(
@@ -396,8 +415,6 @@ export class Fraction implements Surd {
     return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
   }
   preferablyInt() {
-    const simple = this.simplify();
-    if (simple instanceof Int) return simple;
     return this;
   }
   static add(a: Fraction, b: Fraction) {
@@ -472,7 +489,9 @@ export class Choose implements Surd {
     // nCr = (n!)/(r!(n - r)!)
     const num = new Factorial(this.n);
     const den = new Mult(new Factorial(this.r), new Factorial(this.n - this.r));
-    return new Fraction(num, den);
+    const result = new Fraction(num, den);
+    log(this, result);
+    return result;
   }
   simplify() {
     return this.maths().simplify();
@@ -496,7 +515,9 @@ export class Permute implements Surd {
     // nPr = (n!)/((n - r)!)
     const num = new Factorial(this.n);
     const den = new Factorial(this.n - this.r);
-    return new Fraction(num, den);
+    const result = new Fraction(num, den);
+    log(this, result);
+    return result;
   }
   simplify() {
     return this.maths().simplify();
@@ -531,7 +552,9 @@ export class SigmaSummation implements Surd {
       const term = this.term(new Int(i));
       terms.push(term);
     }
-    return new Summation(terms);
+    const result = new Summation(terms);
+    log(this, result);
+    return result;
   }
   simplify() {
     return this.maths().simplify();
