@@ -86,7 +86,7 @@ test("heads/tails", () => {
     );
   };
 
-  const surd = sum(7, 3, 2, "x");
-  // expect(surd.simplify().compute()).toBe(11 / 16);
+  const surd = sum(5, 3, 2, "x");
+  expect(surd.simplify().compute()).toBe(11 / 16);
   console.log(`${surd.katex()} = ${surd.simplify().katex()}`);
 });

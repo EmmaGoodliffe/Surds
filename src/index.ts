@@ -17,6 +17,10 @@ const sumDigits = (x: number) => digits(x).reduce((a, b) => a + b, 0);
 
 const isInt = (x: number) => x === Math.floor(x);
 
+const isZero = (x: Surd) => x instanceof Int && x.compute() === 0;
+
+const isOne = (x: Surd) => x instanceof Int && x.compute() === 1;
+
 const remove = <T>(arr: T[], x: T) => {
   const result = [...arr];
   result.splice(result.indexOf(x), 1);
@@ -129,10 +133,17 @@ export class Summation implements Surd {
   simplify(): Surd {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
     const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
-    const nonIntegers = terms.filter(t => !(t instanceof Int));
+    const fractions = terms.filter(t => t instanceof Fraction) as Fraction[];
+    const other = terms.filter(
+      t => !(t instanceof Int || t instanceof Fraction),
+    );
     const intSum = integers.reduce((a, b) => a + b, 0);
-    const newTerms =
-      intSum === 0 ? nonIntegers : [new Int(intSum), ...nonIntegers];
+    const fractionSum =
+      fractions.length === 0
+        ? new Int(0)
+        : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
+    const summedTerms = [new Int(intSum), fractionSum, ...other];
+    const newTerms = summedTerms.filter(t => !isZero(t));
     if (newTerms.length === 0) return new Int(0);
     if (newTerms.length === 1) return newTerms[0];
     return new Summation(newTerms);
@@ -141,9 +152,14 @@ export class Summation implements Surd {
     return this.terms.reduce((a, t) => a + t.compute(), 0);
   }
   katex() {
-    return this.terms.map(t => `{${t.katex()}}`).join(" + ");
+    return this.terms.map(t => `{(${t.katex()})}`).join(" + ");
   }
   preferablyInt() {
+    const terms = this.terms.map(t => t.simplify().preferablyInt());
+    const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+    if (integers.length === terms.length) {
+      return new Int(integers.reduce((a, b) => a + b, 0));
+    }
     return this;
   }
 }
@@ -354,7 +370,7 @@ export class Fraction implements Surd {
       const newBPfs = removePowers(bPfs.factors, pfOverlap);
       const num = new PowerFactorisation(newAPfs, sign).simplify();
       const den = new PowerFactorisation(newBPfs, 1).simplify();
-      if (den instanceof Int && den.compute() === 1) return num;
+      if (isOne(den)) return num;
       return new Fraction(num, den);
     }
     try {
@@ -376,6 +392,16 @@ export class Fraction implements Surd {
   preferablyInt() {
     return this;
   }
+  static add(a: Fraction, b: Fraction) {
+    // (w/x) + (y/z) = (wz + xy)/xz
+    const w = a.num;
+    const x = a.den;
+    const y = b.num;
+    const z = b.den;
+    const num = new Add(new Mult(w, z), new Mult(x, y));
+    const den = new Mult(x, z);
+    return new Fraction(num, den);
+  }
 }
 
 export class Power implements Surd {
@@ -383,9 +409,9 @@ export class Power implements Surd {
   simplify() {
     const base = this.base.simplify();
     const ex = this.exponent.simplify();
-    if (ex instanceof Int && ex.compute() === 1) return base;
-    if (base instanceof Int && base.compute() === 0) return base;
-    if (base instanceof Int && base.compute() === 1) return base;
+    if (isOne(ex)) return base;
+    if (isZero(base)) return base;
+    if (isOne(base)) return base;
     return new Power(base, ex);
   }
   compute() {
@@ -395,8 +421,8 @@ export class Power implements Surd {
     return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
   }
   preferablyInt() {
-    const base = this.base.preferablyInt()
-    const ex = this.exponent.preferablyInt()
+    const base = this.base.preferablyInt();
+    const ex = this.exponent.preferablyInt();
     if (base instanceof Int && ex instanceof Int) {
       return new Int(base.compute() ** ex.compute());
     }
