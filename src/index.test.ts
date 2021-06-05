@@ -86,11 +86,13 @@ test("heads/tails", () => {
     );
   };
 
-  const m = 5;
+  expect(sum(5, 3, 2, "x").simplify().compute()).toBe(11 / 16);
+
+  const m = 10;
   const p = 3;
   const q = 2;
   const surd = sum(m, p, q, "x");
-  expect(surd.simplify().compute()).toBe(11 / 16);
   console.log(`${surd.katex()} = ${surd.simplify().katex()}`);
-  console.log(surd.simplify(), surd.simplify().simplify());
+  expect(surd.simplify()).toEqual(surd.simplify().simplify());
+  expect(surd.simplify().compute()).toBeCloseTo(surd.compute());
 });
