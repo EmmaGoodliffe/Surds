@@ -43,6 +43,9 @@ test("new", () => {
   expect(new Add(twoOverThree, threeOverTwo).simplify().compute()).toBe(13 / 6);
   const fracDouble = new Add(frac, frac);
   expect(fracDouble.simplify().compute()).toBe(-1 / 3);
+  const rootTwo = new Power(two, new Fraction(new Int(1), two));
+  const rootFrac = new Fraction(new Mult(two, rootTwo), rootTwo);
+  expect(rootFrac.simplify().compute()).toBe(2);
   const power = new Power(two, three);
   expect(power.simplify().compute()).toBe(8);
   const factorial = new Factorial(5);
@@ -95,11 +98,12 @@ test("heads/tails", () => {
 
   expect(sum(5, 3, 2, "x").simplify().compute()).toBe(11 / 16);
 
-  const m = 31;
+  const m = 32;
   const p = 7;
   const q = 2;
   const surd = sum(m, p, q, "x");
-  console.log(`${surd.katex()} = ${surd.simplify().katex()}`);
-  expect(surd.simplify()).toEqual(surd.simplify().simplify());
-  expect(surd.simplify().compute()).toBeCloseTo(surd.compute());
+  const simple = surd.simplify();
+  console.log(`${surd.katex()} = ${simple.katex()}`);
+  expect(simple).toEqual(simple.simplify());
+  expect(simple.compute()).toBeCloseTo(surd.compute());
 });
