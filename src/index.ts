@@ -302,9 +302,11 @@ export class Factorisation implements Surd {
   static pf(x: number) {
     if (!isInt) throw new Error("Not integer");
     const lastDig = digits(x).slice(-1)[0];
+    const restDigits = parseInt(digits(x).slice(0, -1).join(""));
     const sum = sumDigits(x);
     if (lastDig === 0) return [2, 5];
     if (sum % 9 === 0) return [3, 3];
+    if ((restDigits - 2 * lastDig) % 7 === 0) return [7];
     if (lastDig === 5) return [5];
     if (sum % 3 === 0) return [3];
     if (lastDig % 2 === 0) return [2];
