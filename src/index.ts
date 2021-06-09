@@ -1,4 +1,4 @@
-import { appendFileSync as write } from "fs";
+// import { appendFileSync as write } from "fs";
 
 type Sign = -1 | 0 | 1;
 type PowerFactors = Record<number, number>;
@@ -71,15 +71,18 @@ const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 const count = <T>(arr: T[], x: T) =>
   arr.reduce((a, v) => (x === v ? a + 1 : a), 0);
 
-const log = (from: Surd, to: Surd) =>
-  write(
-    "./log.md",
-    ["$$", `${from.katex()} = ${to.katex()}`, "$$", "", ""].join("\n"),
-  );
+// const log = (from: Surd, to: Surd) =>
+//   write(
+//     "./log.md",
+//     ["$$", `${from.katex()} = ${to.katex()}`, "$$", "", ""].join("\n"),
+//   );
+
+const log = (from: Surd, to: Surd) => {};
 
 export class Int implements Surd {
   constructor(public x: number) {
     if (!isInt(x)) throw new Error("Not integer");
+    if (`${x}`.includes("e")) throw new Error("Standard form");
   }
   simplify() {
     return this;
@@ -335,7 +338,11 @@ export class PowerFactorisation implements Surd {
       .join(" \\times ")}`;
   }
   preferablyInt() {
-    return new Int(this.compute());
+    try {
+      return new Int(this.compute());
+    } catch (err) {
+      return this;
+    }
   }
   compute() {
     let total = 1;
@@ -400,11 +407,11 @@ export class Fraction implements Surd {
     }
     try {
       return new Fraction(
-        PowerFactorisation.from(this.num),
-        PowerFactorisation.from(this.den),
+        PowerFactorisation.from(this.num.simplify()),
+        PowerFactorisation.from(this.den.simplify()),
       ).simplify();
     } catch (err) {
-      if (!`${err}`.includes("convert to factorisation")) throw err;
+      if (!`${err}`.includes("factorisation")) throw err;
       return new Fraction(this.num.simplify(), this.den.simplify());
     }
   }
@@ -418,14 +425,46 @@ export class Fraction implements Surd {
     return this;
   }
   static add(a: Fraction, b: Fraction) {
-    // (w/x) + (y/z) = (wz + xy)/xz
-    const w = a.num;
-    const x = a.den;
-    const y = b.num;
-    const z = b.den;
-    const num = new Add(new Mult(w, z), new Mult(x, y));
-    const den = new Mult(x, z);
-    return new Fraction(num, den);
+    try {
+      // TODO: make comment more explicit
+      // (w/x) + (y/z)
+      const w = PowerFactorisation.from(a.num);
+      const x = PowerFactorisation.from(a.den).toPfs();
+      const y = PowerFactorisation.from(b.num);
+      const z = PowerFactorisation.from(b.den).toPfs();
+      const aSign = w.sign === x.sign ? 1 : -1;
+      const bSign = y.sign === z.sign ? 1 : -1;
+      const overlap = getPowerOverlap(x.factors, z.factors);
+      const multiplier1 = new PowerFactorisation(
+        removePowers(z.factors, overlap),
+        aSign,
+      );
+      const multiplier2 = new PowerFactorisation(
+        removePowers(x.factors, overlap),
+        bSign,
+      );
+      const commonDenominator = new Mult(
+        new Mult(multiplier1, multiplier2),
+        new PowerFactorisation(overlap, 1),
+      );
+      const absW = new PowerFactorisation(w.factors, 1);
+      const absY = new PowerFactorisation(y.factors, 1);
+      const num = new Add(
+        new Mult(multiplier1, absW),
+        new Mult(multiplier2, absY),
+      );
+      const den = commonDenominator;
+      return new Fraction(num, den);
+    } catch (err) {
+      // (w/x) + (y/z) = (wz + xy)/(xz)
+      const w = a.num;
+      const x = a.den;
+      const y = b.num;
+      const z = b.den;
+      const num = new Add(new Mult(w, z), new Mult(x, y));
+      const den = new Mult(x, z);
+      return new Fraction(num, den);
+    }
   }
 }
 
@@ -449,7 +488,11 @@ export class Power implements Surd {
     const base = this.base.simplify().preferablyInt();
     const ex = this.exponent.simplify().preferablyInt();
     if (base instanceof Int && ex instanceof Int) {
-      return new Int(base.compute() ** ex.compute());
+      try {
+        return new Int(base.compute() ** ex.compute());
+      } catch (err) {
+        return this;
+      }
     }
     return this;
   }

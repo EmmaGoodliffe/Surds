@@ -36,6 +36,13 @@ test("new", () => {
   expect(powerFact.toPfs().factors).toEqual({ 2: 2, 3: 1 });
   const frac = new Fraction(two, new Int(-12));
   expect(frac.simplify().compute()).toBe(2 / -12);
+  const twoOverThree = new Fraction(two, three);
+  const threeOverTwo = new Fraction(three, two);
+  const fracSum = new Add(frac, twoOverThree);
+  expect(fracSum.simplify().compute()).toBe(1 / 2);
+  expect(new Add(twoOverThree, threeOverTwo).simplify().compute()).toBe(13 / 6);
+  const fracDouble = new Add(frac, frac);
+  expect(fracDouble.simplify().compute()).toBe(-1 / 3);
   const power = new Power(two, three);
   expect(power.simplify().compute()).toBe(8);
   const factorial = new Factorial(5);
@@ -88,8 +95,8 @@ test("heads/tails", () => {
 
   expect(sum(5, 3, 2, "x").simplify().compute()).toBe(11 / 16);
 
-  const m = 10;
-  const p = 3;
+  const m = 40;
+  const p = 7;
   const q = 2;
   const surd = sum(m, p, q, "x");
   console.log(`${surd.katex()} = ${surd.simplify().katex()}`);
