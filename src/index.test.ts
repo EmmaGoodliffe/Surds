@@ -95,7 +95,7 @@ test("heads/tails", () => {
 
   expect(sum(5, 3, 2, "x").simplify().compute()).toBe(11 / 16);
 
-  const m = 40;
+  const m = 31;
   const p = 7;
   const q = 2;
   const surd = sum(m, p, q, "x");

@@ -77,7 +77,10 @@ const count = <T>(arr: T[], x: T) =>
 //     ["$$", `${from.katex()} = ${to.katex()}`, "$$", "", ""].join("\n"),
 //   );
 
-const log = (from: Surd, to: Surd) => {};
+const log = (from: Surd, to: Surd) => {
+  from;
+  to;
+};
 
 export class Int implements Surd {
   constructor(public x: number) {
@@ -144,6 +147,7 @@ export class Func<T extends Surd[]> implements Surd {
 export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
   simplify(): Surd {
+    // TODO: factorisation
     const terms = this.terms.map(t => t.simplify().preferablyInt());
     const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
     const fractions = terms.filter(t => t instanceof Fraction) as Fraction[];
@@ -167,7 +171,7 @@ export class Summation implements Surd {
     return this.terms.reduce((a, t) => a + t.compute(), 0);
   }
   katex() {
-    return this.terms.map(t => `{(${t.katex()})}`).join(" + ");
+    return `[${this.terms.map(t => `{(${t.katex()})}`).join(" + ")}]`;
   }
   preferablyInt() {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
@@ -198,7 +202,7 @@ export class Sub implements Surd {
     return this.a.compute() - this.b.compute();
   }
   katex() {
-    return `{${this.a.katex()}} - {${this.b.katex()}}`;
+    return `[{(${this.a.katex()})} - {(${this.b.katex()})}]`;
   }
   preferablyInt() {
     const a = this.a.simplify().preferablyInt();
@@ -229,7 +233,11 @@ export class Mult implements Surd {
     const a = this.a.simplify().preferablyInt();
     const b = this.b.simplify().preferablyInt();
     if (a instanceof Int && b instanceof Int) {
-      return new Int(a.compute() * b.compute());
+      try {
+        return new Int(a.compute() * b.compute());
+      } catch (err) {
+        return this;
+      }
     }
     return this;
   }
@@ -300,7 +308,7 @@ export class Factorisation implements Surd {
     if (lastDig === 5) return [5];
     if (sum % 3 === 0) return [3];
     if (lastDig % 2 === 0) return [2];
-    // TODO: brute force
+    // No brute force
     return [1];
   }
   static pfs(x: number): number[] {
@@ -327,8 +335,10 @@ export class PowerFactorisation implements Surd {
     if (factors.length === 1) {
       const factor = parseInt(factors[0]);
       const power = this.factors[factor];
-      // TODO: make sign external
-      return new Power(new Int(this.sign * factor), new Int(power)).simplify();
+      const absolute = new Power(new Int(factor), new Int(power));
+      const signed =
+        this.sign === -1 ? new Mult(new Int(-1), absolute) : absolute;
+      return signed.simplify();
     }
     return this;
   }
