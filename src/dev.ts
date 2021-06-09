@@ -42,5 +42,5 @@ const sum = (m: number, p: number, q: number, indexSymbol: string) => {
   );
 };
 
-const surd = sum(5, 3, 2, "x");
+const surd = sum(20, 7, 2, "x");
 surd.simplify();
