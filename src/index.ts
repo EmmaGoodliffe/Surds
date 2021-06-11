@@ -1,5 +1,7 @@
 // import { appendFileSync as write } from "fs";
 
+// TODO: try `is` instead of `instanceof`
+
 type Sign = -1 | 0 | 1;
 type PowerFactors = Record<number, number>;
 
@@ -147,19 +149,32 @@ export class Func<T extends Surd[]> implements Surd {
 export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
   simplify(): Surd {
-    // TODO: factorisation
     const terms = this.terms.map(t => t.simplify().preferablyInt());
     const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
     const fractions = terms.filter(t => t instanceof Fraction) as Fraction[];
     const other = terms.filter(
       t => !(t instanceof Int || t instanceof Fraction),
     );
+    const possibleFacts = other.map(t => {
+      try {
+        return PowerFactorisation.from(t);
+      } catch (err) {
+        return t;
+      }
+    });
+    const facts = possibleFacts.filter(
+      t => t instanceof PowerFactorisation,
+    ) as PowerFactorisation[];
+    const otherOther = possibleFacts.filter(
+      t => !(t instanceof PowerFactorisation),
+    );
     const intSum = integers.reduce((a, b) => a + b, 0);
     const fractionSum =
       fractions.length === 0
         ? new Int(0)
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
-    const summedTerms = [new Int(intSum), fractionSum, ...other];
+    const factSum = PowerFactorisation.add(facts);
+    const summedTerms = [new Int(intSum), fractionSum, factSum, ...otherOther];
     const newTerms = summedTerms.filter(t => !isZero(t));
     const result = new Summation(newTerms);
     log(this, result);
@@ -221,6 +236,8 @@ export class Mult implements Surd {
   simplify() {
     const a = this.a.simplify();
     const b = this.b.simplify();
+    if (isOne(a)) return b;
+    if (isOne(b)) return a;
     return new Mult(a, b);
   }
   compute() {
@@ -379,6 +396,16 @@ export class PowerFactorisation implements Surd {
       }
     }
     return new PowerFactorisation(result, this.sign);
+  }
+  static add(terms: PowerFactorisation[]) {
+    // xy + xz = x(y + z)
+    const overlap = terms
+      .map(t => t.factors)
+      .reduce((a, b) => getPowerOverlap(a, b));
+    const factor = new PowerFactorisation(overlap, 1).simplify();
+    const newTerms = terms.map(t => new Fraction(t, factor));
+    if (isOne(factor)) return new Summation(newTerms);
+    return new Mult(factor, new Summation(newTerms));
   }
   static from(x: Surd) {
     if (x instanceof PowerFactorisation) return x;
