@@ -174,7 +174,16 @@ export class Summation implements Surd {
         ? new Int(0)
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
     const factSum = PowerFactorisation.add(facts);
-    const summedTerms = [new Int(intSum), fractionSum, factSum, ...otherOther];
+    const simpleFactSum =
+      factSum instanceof Mult
+        ? factSum.simplify()
+        : new Summation(factSum.terms.map(t => t.simplify()));
+    const summedTerms = [
+      new Int(intSum),
+      fractionSum,
+      simpleFactSum,
+      ...otherOther,
+    ];
     const newTerms = summedTerms.filter(t => !isZero(t));
     const result = new Summation(newTerms);
     log(this, result);

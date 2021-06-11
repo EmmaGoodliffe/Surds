@@ -52,5 +52,6 @@ const b = new Power(new Int(3), new Int(90));
 const c = new Power(new Int(5), new Int(150));
 
 const surd = new Add(new Mult(a, b), new Mult(a, c));
+// const surd = new Add(b, c);
 
 console.log(surd.simplify().katex());
