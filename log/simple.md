@@ -1,3 +1,4 @@
+```js
 Fraction {
   num: Summation {
     terms: [
@@ -127,3 +128,4 @@ Fraction {
     b: Power { base: Int { x: 2 }, exponent: Int { x: 62 } }
   }
 }
+```

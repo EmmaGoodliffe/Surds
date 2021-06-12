@@ -43,11 +43,16 @@ const sum = (m: number, p: number, q: number, indexSymbol: string) => {
   );
 };
 
+const writeObject = (path: string, obj: unknown) => {
+  const lines = ["```js", inspect(obj, false, null), "```", ""];
+  writeFileSync(path, lines.join("\n"));
+};
+
 const surd = sum(38, 7, 2, "x");
 const simple = surd.simplify();
 const simpleSimple = simple.simplify();
 const same = JSON.stringify(simple) === JSON.stringify(simpleSimple);
 console.log(same);
-writeFileSync("log/surd.md", inspect(surd, false, null));
-writeFileSync("log/simple.md", inspect(simple, false, null));
-writeFileSync("log/simpleSimple.md", inspect(simpleSimple, false, null));
+writeObject("log/surd.md", surd);
+writeObject("log/simple.md", simple);
+writeObject("log/simpleSimple.md", simpleSimple);
