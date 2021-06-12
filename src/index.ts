@@ -155,33 +155,34 @@ export class Summation implements Surd {
     const other = terms.filter(
       t => !(t instanceof Int || t instanceof Fraction),
     );
-    const possibleFacts = other.map(t => {
-      try {
-        return PowerFactorisation.from(t);
-      } catch (err) {
-        return t;
-      }
-    });
-    const facts = possibleFacts.filter(
-      t => t instanceof PowerFactorisation,
-    ) as PowerFactorisation[];
-    const otherOther = possibleFacts.filter(
-      t => !(t instanceof PowerFactorisation),
-    );
+    // const possibleFacts = other.map(t => {
+    //   try {
+    //     return PowerFactorisation.from(t);
+    //   } catch (err) {
+    //     return t;
+    //   }
+    // });
+    // const facts = possibleFacts.filter(
+    //   t => t instanceof PowerFactorisation,
+    // ) as PowerFactorisation[];
+    // const otherOther = possibleFacts.filter(
+    //   t => !(t instanceof PowerFactorisation),
+    // );
+    const otherOther = other;
     const intSum = integers.reduce((a, b) => a + b, 0);
     const fractionSum =
       fractions.length === 0
         ? new Int(0)
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
-    const factSum = PowerFactorisation.add(facts);
-    const simpleFactSum =
-      factSum instanceof Summation
-        ? new Summation(factSum.terms.map(t => t.simplify()))
-        : factSum.simplify();
+    // const factSum = PowerFactorisation.add(facts);
+    // const simpleFactSum =
+    //   factSum instanceof Summation
+    //     ? new Summation(factSum.terms.map(t => t.simplify()))
+    //     : factSum.simplify();
     const summedTerms = [
       new Int(intSum),
       fractionSum,
-      simpleFactSum,
+      // simpleFactSum,
       ...otherOther,
     ];
     const newTerms = summedTerms.filter(t => !isZero(t));
@@ -326,7 +327,7 @@ export class Factorisation implements Surd {
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: number) {
-    if (!isInt) throw new Error("Not integer");
+    if (!isInt(x)) throw new Error("Not integer");
     const lastDig = digits(x).slice(-1)[0];
     const restDigits = parseInt(digits(x).slice(0, -1).join(""));
     const sum = sumDigits(x);
@@ -342,6 +343,7 @@ export class Factorisation implements Surd {
   static pfs(x: number): number[] {
     const factors = Factorisation.pf(x);
     const leftOver = x / factors.reduce((a, b) => a * b, 1);
+    if (!isInt(leftOver)) console.log("LEFT OVER!", x, factors, leftOver);
     if (factors[0] === 1) return [leftOver];
     return [...factors, ...Factorisation.pfs(leftOver)].filter(f => f !== 1);
   }

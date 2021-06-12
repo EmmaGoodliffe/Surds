@@ -61,7 +61,7 @@ test("new", () => {
 // TODO: from
 
 test("heads/tails", () => {
-  const f = ([xi, di]: Int[]) => {
+  const f = ([xi, di]: (Int | Variable)[]) => {
     const x = xi.compute();
     const d = di.compute();
     if (x < 1 || x - d < 1) {
@@ -79,7 +79,7 @@ test("heads/tails", () => {
     p: number,
     indexSymbol: string,
   ) => {
-    const args = [x, new Int(m - p)] as Int[];
+    const args = [x, new Int(m - p)];
     const num = new Func(f, args, "f", [indexSymbol, `${m - p}`]);
     const den = new Power(new Int(2), x);
     return new Fraction(num, den);
