@@ -11,7 +11,7 @@ import {
   Variable,
 } from ".";
 
-writeFileSync("./log/log.md", "");
+writeFileSync("log/log.md", "");
 
 const f = ([xi, di]: Int[]) => {
   const x = xi.compute();
@@ -48,5 +48,6 @@ const simple = surd.simplify();
 const simpleSimple = simple.simplify();
 const same = JSON.stringify(simple) === JSON.stringify(simpleSimple);
 console.log(same);
-writeFileSync("./log/simple.md", inspect(simple, false, null));
-writeFileSync("./log/simpleSimple.md", inspect(simpleSimple, false, null));
+writeFileSync("log/surd.md", inspect(surd, false, null));
+writeFileSync("log/simple.md", inspect(simple, false, null));
+writeFileSync("log/simpleSimple.md", inspect(simpleSimple, false, null));
