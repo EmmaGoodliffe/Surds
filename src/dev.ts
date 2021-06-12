@@ -1,4 +1,5 @@
 import { writeFileSync } from "fs";
+import { inspect } from "util";
 import {
   Choose,
   Fraction,
@@ -10,7 +11,7 @@ import {
   Variable,
 } from ".";
 
-writeFileSync("./log.md", "");
+writeFileSync("./log/log.md", "");
 
 const f = ([xi, di]: Int[]) => {
   const x = xi.compute();
@@ -42,5 +43,10 @@ const sum = (m: number, p: number, q: number, indexSymbol: string) => {
   );
 };
 
-const surd = sum(20, 7, 2, "x");
-surd.simplify();
+const surd = sum(38, 7, 2, "x");
+const simple = surd.simplify();
+const simpleSimple = simple.simplify();
+const same = JSON.stringify(simple) === JSON.stringify(simpleSimple);
+console.log(same);
+writeFileSync("./log/simple.md", inspect(simple, false, null));
+writeFileSync("./log/simpleSimple.md", inspect(simpleSimple, false, null));

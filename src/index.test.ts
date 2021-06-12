@@ -103,7 +103,9 @@ test("heads/tails", () => {
   const q = 2;
   const surd = sum(m, p, q, "x");
   const simple = surd.simplify();
-  console.log(`${surd.katex()} = ${simple.katex()}`);
+  console.log(
+    `${surd.katex()} = ${simple.katex()} = ${simple.simplify().katex()}`,
+  );
   expect(simple).toEqual(simple.simplify());
   expect(simple.compute()).toBeCloseTo(surd.compute());
 });

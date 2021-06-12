@@ -175,9 +175,9 @@ export class Summation implements Surd {
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
     const factSum = PowerFactorisation.add(facts);
     const simpleFactSum =
-      factSum instanceof Mult
-        ? factSum.simplify()
-        : new Summation(factSum.terms.map(t => t.simplify()));
+      factSum instanceof Summation
+        ? new Summation(factSum.terms.map(t => t.simplify()))
+        : factSum.simplify();
     const summedTerms = [
       new Int(intSum),
       fractionSum,
@@ -408,11 +408,12 @@ export class PowerFactorisation implements Surd {
   }
   static add(terms: PowerFactorisation[]) {
     // xy + xz = x(y + z)
+    if (!terms.length) return new Int(0);
     const overlap = terms
       .map(t => t.factors)
       .reduce((a, b) => getPowerOverlap(a, b));
     const factor = new PowerFactorisation(overlap, 1).simplify();
-    const newTerms = terms.map(t => new Fraction(t, factor));
+    const newTerms = terms.map(t => new Fraction(t, factor).simplify());
     if (isOne(factor)) return new Summation(newTerms);
     return new Mult(factor, new Summation(newTerms));
   }
