@@ -2,13 +2,10 @@
 
 // TODO: try `is` instead of `instanceof`
 // TODO: make `if` statements consistent
+// TODO: check `parseInt` usage
 
 type Sign = -1 | 0 | 1;
-interface PowerFactor {
-  factor: bigint;
-  power: bigint;
-}
-
+type PowerFactors = Record<string, bigint>;
 interface Surd {
   simplify(): Surd;
   compute(): bigint;
@@ -34,9 +31,8 @@ const remove = <T>(arr: T[], x: T) => {
 
 const removePowers = (a: PowerFactors, b: PowerFactors) => {
   const result: PowerFactors = {};
-  for (const i in a) {
-    const factor = parseInt(i);
-    const newPower = a[factor] - (b[factor] || 0);
+  for (const factor in a) {
+    const newPower = a[factor] - (b[factor] || 0n);
     if (newPower < 0) throw new Error("Negative power in power factorisation");
     if (newPower > 0) {
       result[factor] = newPower;
@@ -61,7 +57,7 @@ const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
   const commonFactors = getOverlap(aFactors, bFactors).map(f => parseInt(f));
   const result: PowerFactors = {};
   for (const factor of commonFactors) {
-    const overlapPower = Math.min(a[factor] || 0, b[factor] || 0);
+    const overlapPower = min(a[factor] || 0n, b[factor] || 0n);
     if (overlapPower > 0) {
       result[factor] = overlapPower;
     }
@@ -72,7 +68,7 @@ const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
 const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 
 const count = <T>(arr: T[], x: T) =>
-  arr.reduce((a, v) => (x === v ? a + 1 : a), 0);
+  arr.reduce((a, v) => (x === v ? a + 1n : a), 0n);
 
 // const log = (from: Surd, to: Surd) =>
 //   write(
@@ -85,29 +81,23 @@ const log = (from: Surd, to: Surd) => {
   to;
 };
 
-const BI = (x: bigint) => {
-  if (!(typeof x === "number")) return x;
+const BI = (x: number | bigint) => {
+  if (typeof x === "bigint") return x;
   if (`${x}`.includes("e")) throw new Error("Standard form");
   if (!(x === Math.floor(x))) throw new Error("Not integer");
   return BigInt(x);
 };
 
-const toSign = (x: bigint) =>
-  typeof x === "number"
-    ? (Math.sign(x) as Sign)
-    : x > 0n
-    ? 1
-    : x === 0n
-    ? 0
-    : -1;
+const toSign = (x: bigint) => (x > 0n ? 1 : x === 0n ? 0 : -1);
 
-const abs = (x: bigint) =>
-  typeof x === "number" ? BI(Math.abs(x)) : toSign(x) === -1 ? -1n * x : x;
+const abs = (x: bigint) => (toSign(x) === -1 ? -1n * x : x);
 
-const tobigint = (x: bigint) => {
-  if (x > bigintber.MAX_SAFE_INTEGER) throw new Error("Too big to convert");
-  return bigintber(x);
+const toNumber = (x: bigint) => {
+  if (x > Number.MAX_SAFE_INTEGER) throw new Error("Too big to convert");
+  return Number(x);
 };
+
+const min = (a: bigint, b: bigint) => (a < b ? a : b);
 
 export class Int implements Surd {
   x: bigint;
@@ -197,7 +187,7 @@ export class Summation implements Surd {
     const intSum = integers.reduce((a, b) => a + b, 0n);
     const fractionSum =
       fractions.length === 0
-        ? new Int(0)
+        ? new Int(0n)
         : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
     // const factSum = PowerFactorisation.add(facts);
     // const simpleFactSum =
@@ -213,7 +203,7 @@ export class Summation implements Surd {
     const newTerms = summedTerms.filter(t => !isZero(t));
     const result = new Summation(newTerms);
     log(this, result);
-    if (newTerms.length === 0) return new Int(0);
+    if (newTerms.length === 0) return new Int(0n);
     if (newTerms.length === 1) return newTerms[0];
     return result;
   }
@@ -309,8 +299,8 @@ export class Factorisation implements Surd {
     this.factors = intFactors.map(n => abs(n)).filter(f => f !== 1n);
   }
   simplify() {
-    if (this.sign === 0) return new Int(0);
-    if (this.factors.length === 0) return new Int(this.sign);
+    if (this.sign === 0) return new Int(0n);
+    if (this.factors.length === 0) return new Int(BI(this.sign));
     if (this.factors.length === 1) {
       return new Int(BI(this.sign) * this.factors[0]);
     }
@@ -343,7 +333,7 @@ export class Factorisation implements Surd {
     }
     if (x instanceof Power && x.exponent instanceof Int) {
       const ex = x.exponent.compute();
-      const surds = Array(tobigint(ex)).fill(x.base);
+      const surds = Array(toNumber(ex)).fill(x.base);
       const factorisations = surds.map(s => Factorisation.from(s));
       const factors = factorisations.map(f => f.factors).flat();
       return new Factorisation(...factors);
@@ -384,15 +374,15 @@ export class PowerFactorisation implements Surd {
     }
   }
   simplify(): Surd {
-    if (this.sign === 0) return new Int(0);
+    if (this.sign === 0) return new Int(0n);
     const factors = Object.keys(this.factors);
-    if (factors.length === 0) return new Int(this.sign);
+    if (factors.length === 0) return new Int(BI(this.sign));
     if (factors.length === 1) {
       const factor = parseInt(factors[0]);
       const power = this.factors[factor];
-      const absolute = new Power(new Int(factor), new Int(power));
+      const absolute = new Power(new Int(BI(factor)), new Int(power));
       const signed =
-        this.sign === -1 ? new Mult(new Int(-1), absolute) : absolute;
+        this.sign === -1 ? new Mult(new Int(-1n), absolute) : absolute;
       return signed.simplify();
     }
     return this;
@@ -413,29 +403,29 @@ export class PowerFactorisation implements Surd {
     let total = 1n;
     for (const factor in this.factors) {
       const power = this.factors[factor];
-      total *= parseInt(factor) ** power;
+      total *= BI(parseInt(factor)) ** power;
     }
-    return this.sign * total;
+    return BI(this.sign) * total;
   }
   toPfs() {
     const result: PowerFactors = {};
     for (const parentKey in this.factors) {
-      const parentFactor = parseInt(parentKey);
-      const parentPower = this.factors[parentFactor];
+      const parentFactor = BI(parseInt(parentKey));
+      const parentPower = this.factors[`${parentFactor}`];
       const pfs = Factorisation.pfs(parentFactor);
       const powerPfs = PowerFactorisation.from(new Factorisation(...pfs));
       for (const key in powerPfs.factors) {
-        const factor = parseInt(key);
+        const factor = key;
         const power = powerPfs.factors[factor];
         const totalPower = parentPower * power;
-        result[factor] = (result[factor] || 0) + totalPower;
+        result[factor] = (result[factor] || 0n) + totalPower;
       }
     }
     return new PowerFactorisation(result, this.sign);
   }
   static add(terms: PowerFactorisation[]) {
     // xy + xz = x(y + z)
-    if (!terms.length) return new Int(0);
+    if (!terms.length) return new Int(0n);
     const overlap = terms
       .map(t => t.factors)
       .reduce((a, b) => getPowerOverlap(a, b));
@@ -450,7 +440,7 @@ export class PowerFactorisation implements Surd {
     const result: PowerFactors = {};
     for (const factor of unique(f.factors)) {
       const power = count(f.factors, factor);
-      result[factor] = power;
+      result[`${factor}`] = power;
     }
     return new PowerFactorisation(result, f.sign);
   }
@@ -463,7 +453,7 @@ export class Fraction implements Surd {
       this.num instanceof PowerFactorisation &&
       this.den instanceof PowerFactorisation
     ) {
-      if (this.num.sign === 0) return new Int(0);
+      if (this.num.sign === 0) return new Int(0n);
       if (this.den.sign === 0) throw new Error("0 division");
       const sign = this.num.sign === this.den.sign ? 1 : -1;
       const overlap = getPowerOverlap(this.num.factors, this.den.factors);
@@ -575,9 +565,7 @@ export class Power implements Surd {
 }
 
 export class Factorial implements Surd {
-  constructor(public x: number) {
-    if (!isInt(x)) throw new Error("Not integer");
-  }
+  constructor(public x: bigint) {}
   private maths() {
     // x! = x * (x - 1) * ... * 2 * 1
     const factors = [];
@@ -601,9 +589,7 @@ export class Factorial implements Surd {
 }
 
 export class Choose implements Surd {
-  constructor(public n: number, public r: number) {
-    if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
-  }
+  constructor(public n: bigint, public r: bigint) {}
   private maths() {
     // nCr = (n!)/(r!(n - r)!)
     const num = new Factorial(this.n);
@@ -627,9 +613,7 @@ export class Choose implements Surd {
 }
 
 export class Permute implements Surd {
-  constructor(public n: number, public r: number) {
-    if (!(isInt(n) && isInt(r))) throw new Error("Not integer");
-  }
+  constructor(public n: bigint, public r: bigint) {}
   private maths() {
     // nPr = (n!)/((n - r)!)
     const num = new Factorial(this.n);
