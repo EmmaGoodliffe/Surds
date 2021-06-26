@@ -2,7 +2,6 @@
 
 // TODO: try `is` instead of `instanceof`
 // TODO: make `if` statements consistent
-// TODO: check `parseInt` usage
 
 type Sign = -1 | 0 | 1;
 type PowerFactors = Record<string, bigint>;
@@ -54,7 +53,7 @@ const getOverlap = <T>(a: T[], b: T[]): T[] => {
 const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
   const aFactors = Object.keys(a);
   const bFactors = Object.keys(b);
-  const commonFactors = getOverlap(aFactors, bFactors).map(f => parseInt(f));
+  const commonFactors = getOverlap(aFactors, bFactors).map(f => BI(f));
   const result: PowerFactors = {};
   for (const factor of commonFactors) {
     const overlapPower = min(a[factor] || 0n, b[factor] || 0n);
@@ -81,9 +80,10 @@ const log = (from: Surd, to: Surd) => {
   to;
 };
 
-const BI = (x: number | bigint) => {
+const BI = (x: string | number | bigint) => {
   if (typeof x === "bigint") return x;
   if (`${x}`.includes("e")) throw new Error("Standard form");
+  if (typeof x === "string") return BigInt(x);
   if (!(x === Math.floor(x))) throw new Error("Not integer");
   return BigInt(x);
 };
@@ -344,15 +344,15 @@ export class Factorisation implements Surd {
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: bigint) {
-    const lastDig = digits(x).slice(-1)[0];
-    const restDigits = parseInt(digits(x).slice(0, -1).join(""));
+    const lastDig = BI(digits(x).slice(-1)[0]);
+    const restDigits = BI(digits(x).slice(0, -1).join(""));
     const sum = sumDigits(x);
-    if (lastDig === 0) return [2n, 5n];
+    if (lastDig === 0n) return [2n, 5n];
     if (sum % 9 === 0) return [3n, 3n];
-    if ((restDigits - 2 * lastDig) % 7 === 0) return [7n];
-    if (lastDig === 5) return [5n];
+    if ((restDigits - 2n * lastDig) % 7n === 0n) return [7n];
+    if (lastDig === 5n) return [5n];
     if (sum % 3 === 0) return [3n];
-    if (lastDig % 2 === 0) return [2n];
+    if (lastDig % 2n === 0n) return [2n];
     // No brute force
     return [1n];
   }
@@ -367,10 +367,10 @@ export class Factorisation implements Surd {
 export class PowerFactorisation implements Surd {
   constructor(public factors: PowerFactors = {}, public sign: Sign) {
     for (const factor in factors) {
-      if (parseInt(factor) < 0) {
+      if (BI(factor) < 0n) {
         throw new Error("Negative factor of power factorisation");
       }
-      if (parseInt(factor) === 0) return new PowerFactorisation({}, 0);
+      if (BI(factor) === 0n) return new PowerFactorisation({}, 0);
     }
   }
   simplify(): Surd {
@@ -378,7 +378,7 @@ export class PowerFactorisation implements Surd {
     const factors = Object.keys(this.factors);
     if (factors.length === 0) return new Int(BI(this.sign));
     if (factors.length === 1) {
-      const factor = parseInt(factors[0]);
+      const factor = factors[0];
       const power = this.factors[factor];
       const absolute = new Power(new Int(BI(factor)), new Int(power));
       const signed =
@@ -389,7 +389,7 @@ export class PowerFactorisation implements Surd {
   }
   katex() {
     return `${this.sign} \\times ${Object.keys(this.factors)
-      .map(key => `{${key}}^{${this.factors[parseInt(key)]}}`)
+      .map(key => `{${key}}^{${this.factors[key]}}`)
       .join(" \\times ")}`;
   }
   preferablyInt() {
@@ -403,14 +403,14 @@ export class PowerFactorisation implements Surd {
     let total = 1n;
     for (const factor in this.factors) {
       const power = this.factors[factor];
-      total *= BI(parseInt(factor)) ** power;
+      total *= BI(factor) ** power;
     }
     return BI(this.sign) * total;
   }
   toPfs() {
     const result: PowerFactors = {};
     for (const parentKey in this.factors) {
-      const parentFactor = BI(parseInt(parentKey));
+      const parentFactor = BI(parentKey);
       const parentPower = this.factors[`${parentFactor}`];
       const pfs = Factorisation.pfs(parentFactor);
       const powerPfs = PowerFactorisation.from(new Factorisation(...pfs));
