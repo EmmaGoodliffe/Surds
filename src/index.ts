@@ -1,29 +1,30 @@
 // import { appendFileSync as write } from "fs";
 
 // TODO: try `is` instead of `instanceof`
+// TODO: make `if` statements consistent
 
 type Sign = -1 | 0 | 1;
-type PowerFactors = Record<number, number>;
+interface PowerFactor {
+  factor: bigint;
+  power: bigint;
+}
 
 interface Surd {
   simplify(): Surd;
-  compute(): number;
+  compute(): bigint;
   katex(): string;
   preferablyInt(): Surd;
 }
 
-const digits = (x: number) => {
-  if (`${x}`.includes("e")) throw new Error("Standard form");
+const digits = (x: bigint) => {
   return `${x}`.split("").map(d => parseInt(d));
 };
 
-const sumDigits = (x: number) => digits(x).reduce((a, b) => a + b, 0);
+const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
 
-const isInt = (x: number) => x === Math.floor(x);
+const isZero = (x: Surd) => x instanceof Int && x.compute() === 0n;
 
-const isZero = (x: Surd) => x instanceof Int && x.compute() === 0;
-
-const isOne = (x: Surd) => x instanceof Int && x.compute() === 1;
+const isOne = (x: Surd) => x instanceof Int && x.compute() === 1n;
 
 const remove = <T>(arr: T[], x: T) => {
   const result = [...arr];
@@ -84,10 +85,34 @@ const log = (from: Surd, to: Surd) => {
   to;
 };
 
+const BI = (x: bigint) => {
+  if (!(typeof x === "number")) return x;
+  if (`${x}`.includes("e")) throw new Error("Standard form");
+  if (!(x === Math.floor(x))) throw new Error("Not integer");
+  return BigInt(x);
+};
+
+const toSign = (x: bigint) =>
+  typeof x === "number"
+    ? (Math.sign(x) as Sign)
+    : x > 0n
+    ? 1
+    : x === 0n
+    ? 0
+    : -1;
+
+const abs = (x: bigint) =>
+  typeof x === "number" ? BI(Math.abs(x)) : toSign(x) === -1 ? -1n * x : x;
+
+const tobigint = (x: bigint) => {
+  if (x > bigintber.MAX_SAFE_INTEGER) throw new Error("Too big to convert");
+  return bigintber(x);
+};
+
 export class Int implements Surd {
-  constructor(public x: number) {
-    if (!isInt(x)) throw new Error("Not integer");
-    if (`${x}`.includes("e")) throw new Error("Standard form");
+  x: bigint;
+  constructor(x: bigint) {
+    this.x = BI(x);
   }
   simplify() {
     return this;
@@ -169,7 +194,7 @@ export class Summation implements Surd {
     //   t => !(t instanceof PowerFactorisation),
     // );
     const otherOther = other;
-    const intSum = integers.reduce((a, b) => a + b, 0);
+    const intSum = integers.reduce((a, b) => a + b, 0n);
     const fractionSum =
       fractions.length === 0
         ? new Int(0)
@@ -193,7 +218,7 @@ export class Summation implements Surd {
     return result;
   }
   compute() {
-    return this.terms.reduce((a, t) => a + t.compute(), 0);
+    return this.terms.reduce((a, t) => a + t.compute(), 0n);
   }
   katex() {
     return `[${this.terms.map(t => `{(${t.katex()})}`).join(" + ")}]`;
@@ -202,7 +227,7 @@ export class Summation implements Surd {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
     const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
     if (integers.length === terms.length) {
-      const result = new Int(integers.reduce((a, b) => a + b, 0));
+      const result = new Int(integers.reduce((a, b) => a + b, 0n));
       log(this, result);
       return result;
     }
@@ -271,26 +296,28 @@ export class Mult implements Surd {
 }
 
 export class Factorisation implements Surd {
-  factors: number[];
+  factors: bigint[];
   sign: Sign;
-  constructor(...factors: number[]) {
-    if (factors.filter(f => !isInt(f)).length) throw new Error("Not integer");
-    if (factors.includes(0)) {
+  constructor(...factors: bigint[]) {
+    const intFactors = factors.map(f => BI(f));
+    if (intFactors.includes(0n)) {
       this.sign = 0;
     } else {
-      const negatives = factors.filter(f => Math.sign(f) === -1).length;
+      const negatives = intFactors.filter(f => toSign(f) === -1).length;
       this.sign = negatives % 2 === 0 ? 1 : -1;
     }
-    this.factors = factors.map(n => Math.abs(n)).filter(f => f !== 1);
+    this.factors = intFactors.map(n => abs(n)).filter(f => f !== 1n);
   }
   simplify() {
     if (this.sign === 0) return new Int(0);
     if (this.factors.length === 0) return new Int(this.sign);
-    if (this.factors.length === 1) return new Int(this.sign * this.factors[0]);
+    if (this.factors.length === 1) {
+      return new Int(BI(this.sign) * this.factors[0]);
+    }
     return this;
   }
   compute() {
-    return this.factors.reduce((a, b) => a * b, 1);
+    return this.factors.reduce((a, b) => a * b, 1n);
   }
   katex() {
     return [this.sign, ...this.factors].join(" \\times ");
@@ -299,7 +326,7 @@ export class Factorisation implements Surd {
     return new Int(this.compute());
   }
   toPfs() {
-    const pfs: number[] = [];
+    const pfs: bigint[] = [];
     for (const f of this.factors) {
       pfs.push(...Factorisation.pfs(f));
     }
@@ -316,7 +343,7 @@ export class Factorisation implements Surd {
     }
     if (x instanceof Power && x.exponent instanceof Int) {
       const ex = x.exponent.compute();
-      const surds = Array(ex).fill(x.base);
+      const surds = Array(tobigint(ex)).fill(x.base);
       const factorisations = surds.map(s => Factorisation.from(s));
       const factors = factorisations.map(f => f.factors).flat();
       return new Factorisation(...factors);
@@ -326,26 +353,24 @@ export class Factorisation implements Surd {
     if (intX instanceof Int) return Factorisation.from(intX);
     throw new Error("Impossible to convert to factorisation");
   }
-  static pf(x: number) {
-    if (!isInt(x)) throw new Error("Not integer");
+  static pf(x: bigint) {
     const lastDig = digits(x).slice(-1)[0];
     const restDigits = parseInt(digits(x).slice(0, -1).join(""));
     const sum = sumDigits(x);
-    if (lastDig === 0) return [2, 5];
-    if (sum % 9 === 0) return [3, 3];
-    if ((restDigits - 2 * lastDig) % 7 === 0) return [7];
-    if (lastDig === 5) return [5];
-    if (sum % 3 === 0) return [3];
-    if (lastDig % 2 === 0) return [2];
+    if (lastDig === 0) return [2n, 5n];
+    if (sum % 9 === 0) return [3n, 3n];
+    if ((restDigits - 2 * lastDig) % 7 === 0) return [7n];
+    if (lastDig === 5) return [5n];
+    if (sum % 3 === 0) return [3n];
+    if (lastDig % 2 === 0) return [2n];
     // No brute force
-    return [1];
+    return [1n];
   }
-  static pfs(x: number): number[] {
+  static pfs(x: bigint): bigint[] {
     const factors = Factorisation.pf(x);
-    const leftOver = x / factors.reduce((a, b) => a * b, 1);
-    if (!isInt(leftOver)) console.log("LEFT OVER!", x, factors, leftOver);
-    if (factors[0] === 1) return [leftOver];
-    return [...factors, ...Factorisation.pfs(leftOver)].filter(f => f !== 1);
+    const leftOver = x / factors.reduce((a, b) => a * b, 1n);
+    if (factors[0] === 1n) return [leftOver];
+    return [...factors, ...Factorisation.pfs(leftOver)].filter(f => f !== 1n);
   }
 }
 
@@ -385,7 +410,7 @@ export class PowerFactorisation implements Surd {
     }
   }
   compute() {
-    let total = 1;
+    let total = 1n;
     for (const factor in this.factors) {
       const power = this.factors[factor];
       total *= parseInt(factor) ** power;
