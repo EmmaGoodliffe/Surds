@@ -53,7 +53,7 @@ const getOverlap = <T>(a: T[], b: T[]): T[] => {
 const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
   const aFactors = Object.keys(a);
   const bFactors = Object.keys(b);
-  const commonFactors = getOverlap(aFactors, bFactors).map(f => BI(f));
+  const commonFactors = getOverlap(aFactors, bFactors);
   const result: PowerFactors = {};
   for (const factor of commonFactors) {
     const overlapPower = min(a[factor] || 0n, b[factor] || 0n);
