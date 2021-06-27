@@ -1,16 +1,16 @@
 declare type Sign = -1 | 0 | 1;
-declare type PowerFactors = Record<number, number>;
+declare type PowerFactors = Record<string, bigint>;
 interface Surd {
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Surd;
 }
 export declare class Int implements Surd {
-    x: number;
-    constructor(x: number);
+    x: bigint;
+    constructor(x: number | bigint);
     simplify(): this;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): this;
 }
@@ -30,7 +30,7 @@ export declare class Func<T extends Surd[]> implements Surd {
     constructor(run: (args: T) => Surd, args: T, symbol?: string, argSymbols?: string[]);
     private maths;
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Surd;
 }
@@ -38,7 +38,7 @@ export declare class Summation implements Surd {
     terms: Surd[];
     constructor(terms: Surd[]);
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int | this;
 }
@@ -50,7 +50,7 @@ export declare class Sub implements Surd {
     b: Surd;
     constructor(a: Surd, b: Surd);
     simplify(): Sub;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int | this;
 }
@@ -59,22 +59,22 @@ export declare class Mult implements Surd {
     b: Surd;
     constructor(a: Surd, b: Surd);
     simplify(): Surd | Mult;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int | this;
 }
 export declare class Factorisation implements Surd {
-    factors: number[];
+    factors: bigint[];
     sign: Sign;
-    constructor(...factors: number[]);
+    constructor(...factors: bigint[]);
     simplify(): Int | this;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int;
     toPfs(): Factorisation;
     static from(x: Surd): Factorisation;
-    static pf(x: number): number[];
-    static pfs(x: number): number[];
+    static pf(x: bigint): bigint[];
+    static pfs(x: bigint): bigint[];
 }
 export declare class PowerFactorisation implements Surd {
     factors: PowerFactors;
@@ -83,7 +83,7 @@ export declare class PowerFactorisation implements Surd {
     simplify(): Surd;
     katex(): string;
     preferablyInt(): Int | this;
-    compute(): number;
+    compute(): bigint;
     toPfs(): PowerFactorisation;
     static add(terms: PowerFactorisation[]): Int | Summation | Mult;
     static from(x: Surd): PowerFactorisation;
@@ -93,7 +93,7 @@ export declare class Fraction implements Surd {
     den: Surd;
     constructor(num: Surd, den: Surd);
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): this;
     static add(a: Fraction, b: Fraction): Fraction;
@@ -103,36 +103,36 @@ export declare class Power implements Surd {
     exponent: Surd;
     constructor(base: Surd, exponent: Surd);
     simplify(): Surd | Power;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int | this;
 }
 export declare class Factorial implements Surd {
-    x: number;
-    constructor(x: number);
+    x: bigint;
+    constructor(x: bigint);
     private maths;
     simplify(): Int | Factorisation;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int;
 }
 export declare class Choose implements Surd {
-    n: number;
-    r: number;
-    constructor(n: number, r: number);
+    n: bigint;
+    r: bigint;
+    constructor(n: bigint, r: bigint);
     private maths;
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Fraction;
 }
 export declare class Permute implements Surd {
-    n: number;
-    r: number;
-    constructor(n: number, r: number);
+    n: bigint;
+    r: bigint;
+    constructor(n: bigint, r: bigint);
     private maths;
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Fraction;
 }
@@ -144,7 +144,7 @@ export declare class SigmaSummation implements Surd {
     constructor(lowerBound: Int, upperBound: Int, term: (x: Int | Variable) => Surd, indexSymbol?: string);
     private maths;
     simplify(): Surd;
-    compute(): number;
+    compute(): bigint;
     katex(): string;
     preferablyInt(): Int | Summation;
 }

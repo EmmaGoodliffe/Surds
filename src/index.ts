@@ -7,7 +7,7 @@ type Sign = -1 | 0 | 1;
 type PowerFactors = Record<string, bigint>;
 interface Surd {
   simplify(): Surd;
-  compute(): bigint;
+  compute(): number | bigint;
   katex(): string;
   preferablyInt(): Surd;
 }
@@ -43,9 +43,8 @@ const removePowers = (a: PowerFactors, b: PowerFactors) => {
 const getOverlap = <T>(a: T[], b: T[]): T[] => {
   for (const i in a) {
     const x = a[i];
-    if (b.includes(x)) {
+    if (b.includes(x))
       return [x, ...getOverlap(a.slice(parseInt(i) + 1), remove(b, x))];
-    }
   }
   return [];
 };
@@ -92,16 +91,21 @@ const toSign = (x: bigint) => (x > 0n ? 1 : x === 0n ? 0 : -1);
 
 const abs = (x: bigint) => (toSign(x) === -1 ? -1n * x : x);
 
-const toNumber = (x: bigint) => {
-  if (x > Number.MAX_SAFE_INTEGER) throw new Error("Too big to convert");
+const toNumber = (x: number | bigint, exact = false) => {
+  if (typeof x === "number") return x;
+  if (exact && x > Number.MAX_SAFE_INTEGER)
+    throw new Error("Too big to convert");
   return Number(x);
 };
 
 const min = (a: bigint, b: bigint) => (a < b ? a : b);
 
+const allInt = (arr: (number | bigint)[]): arr is bigint[] =>
+  arr.length === arr.filter(x => typeof x === "bigint").length;
+
 export class Int implements Surd {
   x: bigint;
-  constructor(x: bigint) {
+  constructor(x: number | bigint) {
     this.x = BI(x);
   }
   simplify() {
@@ -165,7 +169,9 @@ export class Summation implements Surd {
   constructor(public terms: Surd[]) {}
   simplify(): Surd {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
-    const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+    const integers = terms
+      .filter(t => t instanceof Int)
+      .map(i => (i as Int).compute());
     const fractions = terms.filter(t => t instanceof Fraction) as Fraction[];
     const other = terms.filter(
       t => !(t instanceof Int || t instanceof Fraction),
@@ -208,14 +214,18 @@ export class Summation implements Surd {
     return result;
   }
   compute() {
-    return this.terms.reduce((a, t) => a + t.compute(), 0n);
+    const computed = this.terms.map(t => t.compute());
+    if (allInt(computed)) return computed.reduce((a, t) => a + t, 0n);
+    return computed.reduce((a, t) => toNumber(a) + toNumber(t), 0);
   }
   katex() {
     return `[${this.terms.map(t => `{(${t.katex()})}`).join(" + ")}]`;
   }
   preferablyInt() {
     const terms = this.terms.map(t => t.simplify().preferablyInt());
-    const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+    const integers = terms
+      .filter(t => t instanceof Int)
+      .map(i => (i as Int).compute());
     if (integers.length === terms.length) {
       const result = new Int(integers.reduce((a, b) => a + b, 0n));
       log(this, result);
@@ -239,7 +249,11 @@ export class Sub implements Surd {
     return new Sub(a, b);
   }
   compute() {
-    return this.a.compute() - this.b.compute();
+    const a = this.a.compute();
+    const b = this.b.compute();
+    return typeof a === "bigint" && typeof b === "bigint"
+      ? a - b
+      : toNumber(a) - toNumber(b);
   }
   katex() {
     return `[{(${this.a.katex()})} - {(${this.b.katex()})}]`;
@@ -266,7 +280,11 @@ export class Mult implements Surd {
     return new Mult(a, b);
   }
   compute() {
-    return this.a.compute() * this.b.compute();
+    const a = this.a.compute();
+    const b = this.b.compute();
+    return typeof a === "bigint" && typeof b === "bigint"
+      ? a * b
+      : toNumber(a) * toNumber(b);
   }
   katex() {
     return `{${this.a.katex()}} \\times {${this.b.katex()}}`;
@@ -301,9 +319,8 @@ export class Factorisation implements Surd {
   simplify() {
     if (this.sign === 0) return new Int(0n);
     if (this.factors.length === 0) return new Int(BI(this.sign));
-    if (this.factors.length === 1) {
+    if (this.factors.length === 1)
       return new Int(BI(this.sign) * this.factors[0]);
-    }
     return this;
   }
   compute() {
@@ -325,15 +342,14 @@ export class Factorisation implements Surd {
   static from(x: Surd): Factorisation {
     if (x instanceof Factorisation) return x;
     if (x instanceof Int) return new Factorisation(x.compute());
-    if (x instanceof Mult) {
+    if (x instanceof Mult)
       return new Factorisation(
         ...Factorisation.from(x.a).factors,
         ...Factorisation.from(x.b).factors,
       );
-    }
     if (x instanceof Power && x.exponent instanceof Int) {
       const ex = x.exponent.compute();
-      const surds = Array(toNumber(ex)).fill(x.base);
+      const surds = Array(toNumber(ex, true)).fill(x.base);
       const factorisations = surds.map(s => Factorisation.from(s));
       const factors = factorisations.map(f => f.factors).flat();
       return new Factorisation(...factors);
@@ -367,9 +383,8 @@ export class Factorisation implements Surd {
 export class PowerFactorisation implements Surd {
   constructor(public factors: PowerFactors = {}, public sign: Sign) {
     for (const factor in factors) {
-      if (BI(factor) < 0n) {
+      if (BI(factor) < 0n)
         throw new Error("Negative factor of power factorisation");
-      }
       if (BI(factor) === 0n) return new PowerFactorisation({}, 0);
     }
   }
@@ -482,7 +497,12 @@ export class Fraction implements Surd {
     }
   }
   compute() {
-    return this.num.compute() / this.den.compute();
+    const num = this.num.compute();
+    const den = this.den.compute();
+    if (typeof num === "bigint" && typeof den === "bigint") {
+      if (num % den === 0n) return num / den;
+    }
+    return toNumber(num) / toNumber(den);
   }
   katex() {
     return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
@@ -545,7 +565,11 @@ export class Power implements Surd {
     return new Power(base, ex);
   }
   compute() {
-    return this.base.compute() ** this.exponent.compute();
+    const base = this.base.compute();
+    const exponent = this.exponent.compute();
+    return typeof base === "bigint" && typeof exponent === "bigint"
+      ? base ** exponent
+      : toNumber(base) ** toNumber(exponent);
   }
   katex() {
     return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
@@ -565,7 +589,13 @@ export class Power implements Surd {
 }
 
 export class Factorial implements Surd {
-  constructor(public x: bigint) {}
+  constructor(public x: bigint) {
+    try {
+      toNumber(x, true);
+    } catch (err) {
+      throw new Error("Factorial is too large");
+    }
+  }
   private maths() {
     // x! = x * (x - 1) * ... * 2 * 1
     const factors = [];
@@ -643,9 +673,8 @@ export class SigmaSummation implements Surd {
     public term: (x: Int | Variable) => Surd,
     public indexSymbol = "i",
   ) {
-    if (lowerBound > upperBound) {
+    if (lowerBound > upperBound)
       throw new Error("Lower bigger than upper bound");
-    }
   }
   private maths() {
     const l = this.lowerBound.compute();

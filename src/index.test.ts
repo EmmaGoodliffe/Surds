@@ -19,21 +19,21 @@ import {
 test("new", () => {
   const two = new Int(2);
   const three = new Int(3);
-  expect(two.simplify().compute()).toBe(2);
+  expect(two.simplify().compute()).toBe(2n);
   const summation = new Summation([two, three]);
-  expect(summation.simplify().compute()).toBe(5);
+  expect(summation.simplify().compute()).toBe(5n);
   const add = new Add(two, three);
-  expect(add.simplify().compute()).toBe(5);
+  expect(add.simplify().compute()).toBe(5n);
   const sub = new Sub(two, three);
-  expect(sub.simplify().compute()).toBe(-1);
+  expect(sub.simplify().compute()).toBe(-1n);
   const mult = new Mult(two, three);
-  expect(mult.simplify().compute()).toBe(6);
-  const fact = new Factorisation(-12);
-  expect(fact.simplify().compute()).toBe(-12);
-  expect(fact.toPfs().factors.sort()).toEqual([2, 2, 3]);
-  const powerFact = new PowerFactorisation({ 4: 1, 3: 1 }, -1);
-  expect(powerFact.simplify().compute()).toBe(-12);
-  expect(powerFact.toPfs().factors).toEqual({ 2: 2, 3: 1 });
+  expect(mult.simplify().compute()).toBe(6n);
+  const fact = new Factorisation(-12n);
+  expect(fact.simplify().compute()).toBe(-12n);
+  expect(fact.toPfs().factors.sort()).toEqual([2n, 2n, 3n]);
+  const powerFact = new PowerFactorisation({ "4": 1n, "3": 1n }, -1);
+  expect(powerFact.simplify().compute()).toBe(-12n);
+  expect(powerFact.toPfs().factors).toEqual({ 2: 2n, 3: 1n });
   const frac = new Fraction(two, new Int(-12));
   expect(frac.simplify().compute()).toBe(2 / -12);
   const twoOverThree = new Fraction(two, three);
@@ -47,13 +47,13 @@ test("new", () => {
   const rootFrac = new Fraction(new Mult(two, rootTwo), rootTwo);
   expect(rootFrac.simplify().compute()).toBe(2);
   const power = new Power(two, three);
-  expect(power.simplify().compute()).toBe(8);
-  const factorial = new Factorial(5);
-  expect(factorial.simplify().compute()).toBe(5 * 4 * 3 * 2 * 1);
-  const choose = new Choose(5, 2);
-  expect(choose.simplify().compute()).toBe((5 * 4) / 2);
-  const permute = new Permute(5, 2);
-  expect(permute.simplify().compute()).toBe(5 * 4);
+  expect(power.simplify().compute()).toBe(8n);
+  const factorial = new Factorial(5n);
+  expect(factorial.simplify().compute()).toBe(5n * 4n * 3n * 2n * 1n);
+  const choose = new Choose(5n, 2n);
+  expect(choose.simplify().compute()).toBe((5n * 4n) / 2n);
+  const permute = new Permute(5n, 2n);
+  expect(permute.simplify().compute()).toBe(5n * 4n);
   const sigma = new SigmaSummation(two, three, x => new Fraction(x, two));
   expect(sigma.simplify().compute()).toBe(5 / 2);
 });
@@ -68,7 +68,7 @@ test("heads/tails", () => {
       return new Int(1);
     } else {
       const a = new Choose(x, x - d);
-      const b = new Choose(x - 1, x - d - 1);
+      const b = new Choose(x - 1n, x - d - 1n);
       return new Sub(a, b);
     }
   };
@@ -107,5 +107,5 @@ test("heads/tails", () => {
     `${surd.katex()} = ${simple.katex()} = ${simple.simplify().katex()}`,
   );
   expect(simple).toEqual(simple.simplify());
-  expect(simple.compute()).toBeCloseTo(surd.compute());
+  expect(simple.compute()).toBeCloseTo(Number(surd.compute()));
 });

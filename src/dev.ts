@@ -20,7 +20,7 @@ const f = ([xi, di]: (Int | Variable)[]) => {
     return new Int(1);
   } else {
     const a = new Choose(x, x - d);
-    const b = new Choose(x - 1, x - d - 1);
+    const b = new Choose(x - 1n, x - d - 1n);
     return new Sub(a, b);
   }
 };
