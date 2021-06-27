@@ -422,25 +422,15 @@ class Factorisation {
    * @returns Prime factor
    */
   static pf(x) {
-    // TODO: return integer, not array
-    // const lastDig = BI(digits(x).slice(-1)[0]);
-    // const restDigits = BI(digits(x).slice(0, -1).join(""));
-    // const sum = sumDigits(x);
-    // if (lastDig === 0n) return [2n, 5n];
-    // if (sum % 9 === 0) return [3n, 3n];
-    // if ((restDigits - 2n * lastDig) % 7n === 0n) return [7n];
-    // if (lastDig === 5n) return [5n];
-    // if (sum % 3 === 0) return [3n];
-    // if (lastDig % 2n === 0n) return [2n];
     const primes = [
       2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
       71, 73, 79, 83, 89, 97,
     ].map(toBI);
     for (const prime of primes) {
-      if (x % prime === 0n) return [prime];
+      if (x % prime === 0n) return prime;
     }
     // No brute force
-    return [1n];
+    return 1n;
   }
   /**
    * Convert integer to prime factors (under 100)
@@ -448,10 +438,10 @@ class Factorisation {
    * @returns Prime factors
    */
   static pfs(x) {
-    const factors = Factorisation.pf(x);
-    const leftOver = x / factors.reduce((a, b) => a * b, 1n);
-    if (factors[0] === 1n) return [leftOver];
-    return [...factors, ...Factorisation.pfs(leftOver)].filter(f => f !== 1n);
+    const factor = Factorisation.pf(x);
+    const leftOver = x / factor;
+    if (factor === 1n) return [leftOver];
+    return [factor, ...Factorisation.pfs(leftOver)].filter(f => f !== 1n);
   }
 }
 exports.Factorisation = Factorisation;

@@ -909,7 +909,7 @@
                 },
                 {
                   "kind": "Content",
-                  "text": "bigint[]"
+                  "text": "bigint"
                 },
                 {
                   "kind": "Content",

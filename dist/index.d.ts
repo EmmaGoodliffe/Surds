@@ -184,7 +184,7 @@ export declare class Factorisation implements Surd {
    * @param x - Value
    * @returns Prime factor
    */
-  static pf(x: bigint): bigint[];
+  static pf(x: bigint): bigint;
   /**
    * Convert integer to prime factors (under 100)
    * @param x - Value

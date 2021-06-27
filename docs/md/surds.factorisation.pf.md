@@ -9,7 +9,7 @@ Get arbitrary prime factor (under 100) of an integer
 <b>Signature:</b>
 
 ```typescript
-static pf(x: bigint): bigint[];
+static pf(x: bigint): bigint;
 ```
 
 ## Parameters
@@ -20,6 +20,6 @@ static pf(x: bigint): bigint[];
 
 <b>Returns:</b>
 
-bigint\[\]
+bigint
 
 Prime factor

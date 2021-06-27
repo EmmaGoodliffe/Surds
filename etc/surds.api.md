@@ -50,7 +50,7 @@ export class Factorisation implements Surd {
   static from(x: Surd): Factorisation;
   // (undocumented)
   katex(): string;
-  static pf(x: bigint): bigint[];
+  static pf(x: bigint): bigint;
   static pfs(x: bigint): bigint[];
   // (undocumented)
   preferablyInt(): Int;
