@@ -12,11 +12,11 @@ interface Surd {
   preferablyInt(): Surd;
 }
 
-const digits = (x: bigint) => {
-  return `${x}`.split("").map(d => parseInt(d));
-};
+// const digits = (x: bigint) => {
+//   return `${x}`.split("").map(d => parseInt(d));
+// };
 
-const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
+// const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
 
 const isZero = (x: Surd) => x instanceof Int && x.compute() === 0n;
 
@@ -360,15 +360,22 @@ export class Factorisation implements Surd {
     throw new Error("Impossible to convert to factorisation");
   }
   static pf(x: bigint) {
-    const lastDig = BI(digits(x).slice(-1)[0]);
-    const restDigits = BI(digits(x).slice(0, -1).join(""));
-    const sum = sumDigits(x);
-    if (lastDig === 0n) return [2n, 5n];
-    if (sum % 9 === 0) return [3n, 3n];
-    if ((restDigits - 2n * lastDig) % 7n === 0n) return [7n];
-    if (lastDig === 5n) return [5n];
-    if (sum % 3 === 0) return [3n];
-    if (lastDig % 2n === 0n) return [2n];
+    // const lastDig = BI(digits(x).slice(-1)[0]);
+    // const restDigits = BI(digits(x).slice(0, -1).join(""));
+    // const sum = sumDigits(x);
+    // if (lastDig === 0n) return [2n, 5n];
+    // if (sum % 9 === 0) return [3n, 3n];
+    // if ((restDigits - 2n * lastDig) % 7n === 0n) return [7n];
+    // if (lastDig === 5n) return [5n];
+    // if (sum % 3 === 0) return [3n];
+    // if (lastDig % 2n === 0n) return [2n];
+    const primes = [
+      2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+      71, 73, 79, 83, 89, 97,
+    ].map(BI);
+    for (const prime of primes) {
+      if (x % prime === 0n) return [prime];
+    }
     // No brute force
     return [1n];
   }

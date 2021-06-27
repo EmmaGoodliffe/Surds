@@ -2,10 +2,10 @@
 // import { appendFileSync as write } from "fs";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SigmaSummation = exports.Permute = exports.Choose = exports.Factorial = exports.Power = exports.Fraction = exports.PowerFactorisation = exports.Factorisation = exports.Mult = exports.Sub = exports.Add = exports.Summation = exports.Func = exports.Variable = exports.Int = void 0;
-const digits = (x) => {
-    return `${x}`.split("").map(d => parseInt(d));
-};
-const sumDigits = (x) => digits(x).reduce((a, b) => a + b, 0);
+// const digits = (x: bigint) => {
+//   return `${x}`.split("").map(d => parseInt(d));
+// };
+// const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
 const isZero = (x) => x instanceof Int && x.compute() === 0n;
 const isOne = (x) => x instanceof Int && x.compute() === 1n;
 const remove = (arr, x) => {
@@ -28,9 +28,8 @@ const removePowers = (a, b) => {
 const getOverlap = (a, b) => {
     for (const i in a) {
         const x = a[i];
-        if (b.includes(x)) {
+        if (b.includes(x))
             return [x, ...getOverlap(a.slice(parseInt(i) + 1), remove(b, x))];
-        }
     }
     return [];
 };
@@ -71,12 +70,15 @@ const BI = (x) => {
 };
 const toSign = (x) => (x > 0n ? 1 : x === 0n ? 0 : -1);
 const abs = (x) => (toSign(x) === -1 ? -1n * x : x);
-const toNumber = (x) => {
-    if (x > Number.MAX_SAFE_INTEGER)
+const toNumber = (x, exact = false) => {
+    if (typeof x === "number")
+        return x;
+    if (exact && x > Number.MAX_SAFE_INTEGER)
         throw new Error("Too big to convert");
     return Number(x);
 };
 const min = (a, b) => (a < b ? a : b);
+const allInt = (arr) => arr.length === arr.filter(x => typeof x === "bigint").length;
 class Int {
     constructor(x) {
         this.x = BI(x);
@@ -146,7 +148,9 @@ class Summation {
     }
     simplify() {
         const terms = this.terms.map(t => t.simplify().preferablyInt());
-        const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+        const integers = terms
+            .filter(t => t instanceof Int)
+            .map(i => i.compute());
         const fractions = terms.filter(t => t instanceof Fraction);
         const other = terms.filter(t => !(t instanceof Int || t instanceof Fraction));
         // const possibleFacts = other.map(t => {
@@ -188,14 +192,19 @@ class Summation {
         return result;
     }
     compute() {
-        return this.terms.reduce((a, t) => a + t.compute(), 0n);
+        const computed = this.terms.map(t => t.compute());
+        if (allInt(computed))
+            return computed.reduce((a, t) => a + t, 0n);
+        return computed.reduce((a, t) => toNumber(a) + toNumber(t), 0);
     }
     katex() {
         return `[${this.terms.map(t => `{(${t.katex()})}`).join(" + ")}]`;
     }
     preferablyInt() {
         const terms = this.terms.map(t => t.simplify().preferablyInt());
-        const integers = terms.filter(t => t instanceof Int).map(i => i.compute());
+        const integers = terms
+            .filter(t => t instanceof Int)
+            .map(i => i.compute());
         if (integers.length === terms.length) {
             const result = new Int(integers.reduce((a, b) => a + b, 0n));
             log(this, result);
@@ -222,7 +231,11 @@ class Sub {
         return new Sub(a, b);
     }
     compute() {
-        return this.a.compute() - this.b.compute();
+        const a = this.a.compute();
+        const b = this.b.compute();
+        return typeof a === "bigint" && typeof b === "bigint"
+            ? a - b
+            : toNumber(a) - toNumber(b);
     }
     katex() {
         return `[{(${this.a.katex()})} - {(${this.b.katex()})}]`;
@@ -254,7 +267,11 @@ class Mult {
         return new Mult(a, b);
     }
     compute() {
-        return this.a.compute() * this.b.compute();
+        const a = this.a.compute();
+        const b = this.b.compute();
+        return typeof a === "bigint" && typeof b === "bigint"
+            ? a * b
+            : toNumber(a) * toNumber(b);
     }
     katex() {
         return `{${this.a.katex()}} \\times {${this.b.katex()}}`;
@@ -291,9 +308,8 @@ class Factorisation {
             return new Int(0n);
         if (this.factors.length === 0)
             return new Int(BI(this.sign));
-        if (this.factors.length === 1) {
+        if (this.factors.length === 1)
             return new Int(BI(this.sign) * this.factors[0]);
-        }
         return this;
     }
     compute() {
@@ -317,12 +333,11 @@ class Factorisation {
             return x;
         if (x instanceof Int)
             return new Factorisation(x.compute());
-        if (x instanceof Mult) {
+        if (x instanceof Mult)
             return new Factorisation(...Factorisation.from(x.a).factors, ...Factorisation.from(x.b).factors);
-        }
         if (x instanceof Power && x.exponent instanceof Int) {
             const ex = x.exponent.compute();
-            const surds = Array(toNumber(ex)).fill(x.base);
+            const surds = Array(toNumber(ex, true)).fill(x.base);
             const factorisations = surds.map(s => Factorisation.from(s));
             const factors = factorisations.map(f => f.factors).flat();
             return new Factorisation(...factors);
@@ -335,21 +350,23 @@ class Factorisation {
         throw new Error("Impossible to convert to factorisation");
     }
     static pf(x) {
-        const lastDig = BI(digits(x).slice(-1)[0]);
-        const restDigits = BI(digits(x).slice(0, -1).join(""));
-        const sum = sumDigits(x);
-        if (lastDig === 0n)
-            return [2n, 5n];
-        if (sum % 9 === 0)
-            return [3n, 3n];
-        if ((restDigits - 2n * lastDig) % 7n === 0n)
-            return [7n];
-        if (lastDig === 5n)
-            return [5n];
-        if (sum % 3 === 0)
-            return [3n];
-        if (lastDig % 2n === 0n)
-            return [2n];
+        // const lastDig = BI(digits(x).slice(-1)[0]);
+        // const restDigits = BI(digits(x).slice(0, -1).join(""));
+        // const sum = sumDigits(x);
+        // if (lastDig === 0n) return [2n, 5n];
+        // if (sum % 9 === 0) return [3n, 3n];
+        // if ((restDigits - 2n * lastDig) % 7n === 0n) return [7n];
+        // if (lastDig === 5n) return [5n];
+        // if (sum % 3 === 0) return [3n];
+        // if (lastDig % 2n === 0n) return [2n];
+        const primes = [
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+            71, 73, 79, 83, 89, 97,
+        ].map(BI);
+        for (const prime of primes) {
+            if (x % prime === 0n)
+                return [prime];
+        }
         // No brute force
         return [1n];
     }
@@ -367,9 +384,8 @@ class PowerFactorisation {
         this.factors = factors;
         this.sign = sign;
         for (const factor in factors) {
-            if (BI(factor) < 0n) {
+            if (BI(factor) < 0n)
                 throw new Error("Negative factor of power factorisation");
-            }
             if (BI(factor) === 0n)
                 return new PowerFactorisation({}, 0);
         }
@@ -491,7 +507,13 @@ class Fraction {
         }
     }
     compute() {
-        return this.num.compute() / this.den.compute();
+        const num = this.num.compute();
+        const den = this.den.compute();
+        if (typeof num === "bigint" && typeof den === "bigint") {
+            if (num % den === 0n)
+                return num / den;
+        }
+        return toNumber(num) / toNumber(den);
     }
     katex() {
         return `\\frac{${this.num.katex()}}{${this.den.katex()}}`;
@@ -549,7 +571,11 @@ class Power {
         return new Power(base, ex);
     }
     compute() {
-        return this.base.compute() ** this.exponent.compute();
+        const base = this.base.compute();
+        const exponent = this.exponent.compute();
+        return typeof base === "bigint" && typeof exponent === "bigint"
+            ? base ** exponent
+            : toNumber(base) ** toNumber(exponent);
     }
     katex() {
         return `{${this.base.katex()}}^{${this.exponent.katex()}}`;
@@ -573,7 +599,7 @@ class Factorial {
     constructor(x) {
         this.x = x;
         try {
-            toNumber(x);
+            toNumber(x, true);
         }
         catch (err) {
             throw new Error("Factorial is too large");
@@ -661,9 +687,8 @@ class SigmaSummation {
         this.upperBound = upperBound;
         this.term = term;
         this.indexSymbol = indexSymbol;
-        if (lowerBound > upperBound) {
+        if (lowerBound > upperBound)
             throw new Error("Lower bigger than upper bound");
-        }
     }
     maths() {
         const l = this.lowerBound.compute();

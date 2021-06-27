@@ -9,7 +9,14 @@
     "plugin:@typescript-eslint/recommended",
     "plugin:import/typescript"
   ],
-  "ignorePatterns": "*.config.js",
+  "ignorePatterns": ["*.config.js", "dist"],
+  "overrides": [
+    {
+      "files": "*.test.ts",
+      "env": { "jest": true },
+      "parserOptions": { "project": "src/test.tsconfig.json" }
+    }
+  ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaFeatures": {
