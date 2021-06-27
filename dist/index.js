@@ -6,6 +6,11 @@ exports.SigmaSummation = exports.Permute = exports.Choose = exports.Factorial = 
 //   return `${x}`.split("").map(d => parseInt(d));
 // };
 // const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
+/**
+ * Check whether a surd is an integer of value zero
+ * @param x - Surd
+ * @returns Answer
+ */
 const isZero = (x) => x instanceof Int && x.compute() === 0n;
 const isOne = (x) => x instanceof Int && x.compute() === 1n;
 const remove = (arr, x) => {

@@ -1,10 +1,27 @@
 declare type Sign = -1 | 0 | 1;
 declare type PowerFactors = Record<string, bigint>;
+/** Exact surd */
 interface Surd {
+    /**
+     * Simplify exactly
+     * @returns Simplified surd
+     */
     simplify(): Surd;
+    /**
+     * Compute with floating point maths
+     * @returns Computed value
+     */
     compute(): number | bigint;
+    /**
+     * Convert to KATEX ({@link https://katex.org/})
+     * @returns KATEX
+     */
     katex(): string;
-    preferablyInt(): Surd;
+    /**
+     * Attempt to convert to Int
+     * @returns Int or Surd
+     */
+    preferablyInt(): Int | Surd;
 }
 export declare class Int implements Surd {
     x: bigint;
@@ -32,7 +49,7 @@ export declare class Func<T extends Surd[]> implements Surd {
     simplify(): Surd;
     compute(): number | bigint;
     katex(): string;
-    preferablyInt(): Surd;
+    preferablyInt(): Surd | Int;
 }
 export declare class Summation implements Surd {
     terms: Surd[];
