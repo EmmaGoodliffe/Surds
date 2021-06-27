@@ -12,8 +12,12 @@
   "ignorePatterns": ["*.config.js", "dist"],
   "overrides": [
     {
-      "files": "*.test.ts",
+      "files": ["*.test.ts"],
       "env": { "jest": true },
+      "parserOptions": { "project": "src/test.tsconfig.json" }
+    },
+    {
+      "files": ["src/dev.ts"],
       "parserOptions": { "project": "src/test.tsconfig.json" }
     }
   ],

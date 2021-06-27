@@ -3,16 +3,23 @@
 // TODO: try `is` instead of `instanceof`
 // TODO: make `if` statements consistent
 
-/** Sign of surd or number */
-type Sign = -1 | 0 | 1;
+/**
+ * Sign of surd or number
+ * @public
+ */
+export type Sign = -1 | 0 | 1;
 /**
  * Factorisation represented as powers (keys are factors and values are powers)
  * @example
- * { "2": 2n, "3", 1n } // represents 2^2 * 3^1 = 12
+ * \{ "2": 2n, "3", 1n \} // represents 2^2 * 3^1 = 12
+ * @public
  */
-type PowerFactors = Record<string, bigint>;
-/** Exact surd */
-interface Surd {
+export type PowerFactors = Record<string, bigint>;
+/**
+ * Exact surd
+ * @public
+ */
+export interface Surd {
   /**
    * Simplify exactly
    * @returns Simplified surd
@@ -41,38 +48,16 @@ interface Surd {
 
 // const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
 
-/**
- * Check whether a surd is an integer of value zero
- * @param x - Surd
- * @returns Answer
- */
 const isZero = (x: Surd) => x instanceof Int && x.compute() === 0n;
 
-/**
- * Checks whether a surd is an integer of value one
- * @param x - Surd
- * @returns Answer
- */
 const isOne = (x: Surd) => x instanceof Int && x.compute() === 1n;
 
-/**
- * Remove item from array
- * @param arr - Array
- * @param x - Item to remove
- * @returns New array
- */
 const remove = <T>(arr: T[], x: T) => {
   const result = [...arr];
   result.splice(result.indexOf(x), 1);
   return result;
 };
 
-/**
- * Remove factors
- * @param a - Original factors
- * @param b - Factors to remove
- * @returns New factors
- */
 const removePowers = (a: PowerFactors, b: PowerFactors) => {
   const result: PowerFactors = {};
   for (const factor in a) {
@@ -85,12 +70,6 @@ const removePowers = (a: PowerFactors, b: PowerFactors) => {
   return result;
 };
 
-/**
- * Get overlapping values between two arrays
- * @param a - Array one
- * @param b - Array two
- * @returns Overlapping values
- */
 const getOverlap = <T>(a: T[], b: T[]): T[] => {
   for (const i in a) {
     const x = a[i];
@@ -100,12 +79,6 @@ const getOverlap = <T>(a: T[], b: T[]): T[] => {
   return [];
 };
 
-/**
- * Get overlap of factorisations
- * @param a - Factorisation one
- * @param b - Factorisation two
- * @returns Highest common factor
- */
 const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
   const aFactors = Object.keys(a);
   const bFactors = Object.keys(b);
@@ -120,19 +93,8 @@ const getPowerOverlap = (a: PowerFactors, b: PowerFactors) => {
   return result;
 };
 
-/**
- * Get unique values from array
- * @param arr - Array
- * @returns New array
- */
 const unique = <T>(arr: T[]) => Array.from(new Set(arr));
 
-/**
- * Count how many times a value appears in an array
- * @param arr - Array
- * @param x - Value
- * @returns Number of appearances
- */
 const count = <T>(arr: T[], x: T) =>
   arr.reduce((a, v) => (x === v ? a + 1n : a), 0n);
 
@@ -142,11 +104,6 @@ const count = <T>(arr: T[], x: T) =>
 //     ["$$", `${from.katex()} = ${to.katex()}`, "$$", "", ""].join("\n"),
 //   );
 
-/**
- * Convert to big integer
- * @param x - Value
- * @returns Big integer
- */
 const toBI = (x: string | number | bigint) => {
   if (typeof x === "bigint") return x;
   if (`${x}`.includes("e")) throw new Error("Standard form");
@@ -155,27 +112,11 @@ const toBI = (x: string | number | bigint) => {
   return BigInt(x);
 };
 
-/**
- * Convert to sign
- * @param x - Value
- * @returns Sign
- */
 const toSign = (x: bigint) => (x > 0n ? 1 : x === 0n ? 0 : -1);
 
-/**
- * Convert to absolute value
- * @param x - Value
- * @returns Absolute value
- */
 const abs = (x: bigint) => (toSign(x) === -1 ? -1n * x : x);
 
 // TODO: check that `exact` is documented as optional
-/**
- * Convert to number
- * @param x - Value
- * @param exact - Whether to ensure returned number is not rounded
- * @returns Number
- */
 const toNumber = (x: number | bigint, exact = false) => {
   if (typeof x === "number") return x;
   if (exact && x > Number.MAX_SAFE_INTEGER)
@@ -183,23 +124,15 @@ const toNumber = (x: number | bigint, exact = false) => {
   return Number(x);
 };
 
-/**
- * Get minimum value
- * @param a - Value one
- * @param b - Value two
- * @returns Minimum value
- */
 const min = (a: bigint, b: bigint) => (a < b ? a : b);
 
-/**
- * Checks whether array only contains big integers
- * @param arr - Array
- * @returns Answer
- */
 const allInt = (arr: (number | bigint)[]): arr is bigint[] =>
   arr.length === arr.filter(x => typeof x === "bigint").length;
 
-/** Integer */
+/**
+ * Integer
+ * @public
+ */
 export class Int implements Surd {
   x: bigint;
   /**
@@ -224,6 +157,7 @@ export class Int implements Surd {
 
 /**
  * Variable (to define an abstraction such as a function and to be given a value before being computed)
+ * @public
  */
 export class Variable implements Surd {
   /**
@@ -244,7 +178,10 @@ export class Variable implements Surd {
   }
 }
 
-/** Function */
+/**
+ * Function
+ * @public
+ */
 export class Func<T extends Surd[]> implements Surd {
   /**
    * @param run - Function
@@ -278,7 +215,10 @@ export class Func<T extends Surd[]> implements Surd {
   }
 }
 
-/** Summation */
+/**
+ * Summation
+ * @public
+ */
 export class Summation implements Surd {
   /**
    * @param terms - Terms to sum
@@ -352,7 +292,10 @@ export class Summation implements Surd {
   }
 }
 
-/** Add */
+/**
+ * Add
+ * @public
+ */
 export class Add extends Summation {
   /**
    * @param a - Term one
@@ -363,7 +306,10 @@ export class Add extends Summation {
   }
 }
 
-/** Subtraction */
+/**
+ * Subtraction
+ * @public
+ */
 export class Sub implements Surd {
   /**
    * @param a - Term one
@@ -397,7 +343,10 @@ export class Sub implements Surd {
   }
 }
 
-/** Multiplication */
+/**
+ * Multiplication
+ * @public
+ */
 export class Mult implements Surd {
   /**
    * @param a - Term one
@@ -435,7 +384,10 @@ export class Mult implements Surd {
   }
 }
 
-/** Factorisation (multiplication of integers) */
+/**
+ * Factorisation (multiplication of integers)
+ * @public
+ */
 export class Factorisation implements Surd {
   factors: bigint[];
   sign: Sign;
@@ -543,7 +495,10 @@ export class Factorisation implements Surd {
   }
 }
 
-/** Factorisation represented as powers of integers */
+/**
+ * Factorisation represented as powers of integers
+ * @public
+ */
 export class PowerFactorisation implements Surd {
   /**
    * @param factors - Factors
@@ -643,7 +598,10 @@ export class PowerFactorisation implements Surd {
   }
 }
 
-/** Fraction */
+/**
+ * Fraction
+ * @public
+ */
 export class Fraction implements Surd {
   /**
    * @param num - Numerator
@@ -746,7 +704,10 @@ export class Fraction implements Surd {
   }
 }
 
-/** Power (index) */
+/**
+ * Power (index)
+ * @public
+ */
 export class Power implements Surd {
   /**
    * @param base - Base
@@ -785,7 +746,10 @@ export class Power implements Surd {
   }
 }
 
-/** Factorial (x!) */
+/**
+ * Factorial (x!)
+ * @public
+ */
 export class Factorial implements Surd {
   /**
    * @param x - Value
@@ -819,7 +783,10 @@ export class Factorial implements Surd {
   }
 }
 
-/** Choose (nCr) */
+/**
+ * Choose (nCr)
+ * @public
+ */
 export class Choose implements Surd {
   /**
    * @param n - n
@@ -848,7 +815,10 @@ export class Choose implements Surd {
   }
 }
 
-/** Permute (nPr) */
+/**
+ * Permute (nPr)
+ * @public
+ */
 export class Permute implements Surd {
   /**
    * @param n - n
@@ -877,7 +847,10 @@ export class Permute implements Surd {
   }
 }
 
-/** Summation in capital-sigma notation */
+/**
+ * Summation in capital-sigma notation
+ * @public
+ */
 export class SigmaSummation implements Surd {
   /**
    * @param lowerBound - Lower bound (under sigma in notation)
