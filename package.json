@@ -7,7 +7,7 @@
     "build": "npm run build:ts",
     "build:ts": "tsc",
     "dev": "ts-node src/dev.ts",
-    "docs": "npm run build && api-extractor run --local && api-documenter markdown --input-folder temp --output-folder docs/md",
+    "docs": "npm run build && api-extractor run --local && api-documenter markdown --input-folder temp --output-folder docs/md && npm run lint",
     "lint": "eslint \".\" --fix && prettier \".\" --write",
     "test": "jest"
   },
