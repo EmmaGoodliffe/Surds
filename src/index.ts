@@ -2,6 +2,7 @@
 
 // TODO: try `is` instead of `instanceof`
 // TODO: make `if` statements consistent
+// TODO: Check if uses of `toBI` are necessary
 
 /**
  * Sign of surd or number
@@ -11,7 +12,7 @@ export type Sign = -1 | 0 | 1;
 /**
  * Factorisation represented as powers (keys are factors and values are powers)
  * @example
- * \{ "2": 2n, "3", 1n \} // represents 2^2 * 3^1 = 12
+ * \{ "2": 2n, "3": 1n \} // represents 2^2 * 3^1 = 12
  * @public
  */
 export type PowerFactors = Record<string, bigint>;
@@ -110,7 +111,6 @@ const toSign = (x: bigint) => (x > 0n ? 1 : x === 0n ? 0 : -1);
 
 const abs = (x: bigint) => (toSign(x) === -1 ? -1n * x : x);
 
-// TODO: check that `exact` is documented as optional
 const toNumber = (x: number | bigint, exact = false) => {
   if (typeof x === "number") return x;
   if (exact && x > Number.MAX_SAFE_INTEGER)
@@ -122,6 +122,11 @@ const min = (a: bigint, b: bigint) => (a < b ? a : b);
 
 const allInt = (arr: (number | bigint)[]): arr is bigint[] =>
   arr.length === arr.filter(x => typeof x === "bigint").length;
+
+const combineSigns = (a: Sign, b: Sign) => {
+  if (a === 0 || b === 0) return 0;
+  return a === b ? 1 : -1;
+};
 
 /**
  * Integer
@@ -404,7 +409,7 @@ export class Factorisation implements Surd {
   }
   simplify() {
     if (this.sign === 0) return new Int(0n);
-    if (this.factors.length === 0) return new Int(toBI(this.sign));
+    if (this.factors.length === 0) return new Int(this.sign);
     if (this.factors.length === 1)
       return new Int(toBI(this.sign) * this.factors[0]);
     return this;
@@ -437,11 +442,13 @@ export class Factorisation implements Surd {
   static from(x: Surd): Factorisation {
     if (x instanceof Factorisation) return x;
     if (x instanceof Int) return new Factorisation(x.compute());
-    if (x instanceof Mult)
-      return new Factorisation(
-        ...Factorisation.from(x.a).factors,
-        ...Factorisation.from(x.b).factors,
-      );
+    if (x instanceof Mult) {
+      const a = Factorisation.from(x.a);
+      const b = Factorisation.from(x.b);
+      const factors = [...a.factors, ...b.factors];
+      const sign = combineSigns(a.sign, b.sign);
+      return new Factorisation(toBI(sign), ...factors);
+    }
     if (x instanceof Power && x.exponent instanceof Int) {
       const ex = x.exponent.compute();
       const surds = Array(toNumber(ex, true)).fill(x.base);
@@ -502,7 +509,7 @@ export class PowerFactorisation implements Surd {
   simplify(): Surd {
     if (this.sign === 0) return new Int(0n);
     const factors = Object.keys(this.factors);
-    if (factors.length === 0) return new Int(toBI(this.sign));
+    if (factors.length === 0) return new Int(this.sign);
     if (factors.length === 1) {
       const factor = factors[0];
       const power = this.factors[factor];
@@ -603,7 +610,7 @@ export class Fraction implements Surd {
     ) {
       if (this.num.sign === 0) return new Int(0n);
       if (this.den.sign === 0) throw new Error("0 division");
-      const sign = this.num.sign === this.den.sign ? 1 : -1;
+      const sign = combineSigns(this.num.sign, this.den.sign);
       const overlap = getPowerOverlap(this.num.factors, this.den.factors);
       const newA = removePowers(this.num.factors, overlap);
       const newB = removePowers(this.den.factors, overlap);
@@ -657,26 +664,26 @@ export class Fraction implements Surd {
       const z = PowerFactorisation.from(b.den).toPfs();
       if (w.sign === 0) return b;
       if (y.sign === 0) return a;
-      const aSign = w.sign === x.sign ? 1 : -1;
-      const bSign = y.sign === z.sign ? 1 : -1;
+      const aSign = combineSigns(w.sign, x.sign);
+      const bSign = combineSigns(y.sign, z.sign);
       const overlap = getPowerOverlap(x.factors, z.factors);
       const multiplier1 = new PowerFactorisation(
         removePowers(z.factors, overlap),
-        aSign,
+        1,
       );
       const multiplier2 = new PowerFactorisation(
         removePowers(x.factors, overlap),
-        bSign,
+        1,
       );
       const commonDenominator = new Mult(
         new Mult(multiplier1, multiplier2),
         new PowerFactorisation(overlap, 1),
       );
-      const absW = new PowerFactorisation(w.factors, 1);
-      const absY = new PowerFactorisation(y.factors, 1);
+      const signedW = new PowerFactorisation(w.factors, aSign);
+      const signedY = new PowerFactorisation(y.factors, bSign);
       const num = new Add(
-        new Mult(multiplier1, absW),
-        new Mult(multiplier2, absY),
+        new Mult(multiplier1, signedW),
+        new Mult(multiplier2, signedY),
       );
       const den = commonDenominator;
       return new Fraction(num, den);
