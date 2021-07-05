@@ -1,6 +1,5 @@
 // import { appendFileSync as write } from "fs";
 
-// TODO: try `is` instead of `instanceof`
 // TODO: make `if` statements consistent
 // TODO: Check if uses of `toBI` are necessary
 
