@@ -1,8 +1,5 @@
 // import { appendFileSync as write } from "fs";
 
-// TODO: make `if` statements consistent
-// TODO: Check if uses of `toBI` are necessary
-
 /**
  * Sign of surd or number
  * @public
@@ -375,13 +372,8 @@ export class Mult implements Surd {
   preferablyInt() {
     const a = this.a.simplify().preferablyInt();
     const b = this.b.simplify().preferablyInt();
-    if (a instanceof Int && b instanceof Int) {
-      try {
-        return new Int(a.compute() * b.compute());
-      } catch (err) {
-        return this;
-      }
-    }
+    if (a instanceof Int && b instanceof Int)
+      return new Int(a.compute() * b.compute());
     return this;
   }
 }
@@ -397,14 +389,13 @@ export class Factorisation implements Surd {
    * @param factors - Factors
    */
   constructor(...factors: bigint[]) {
-    const intFactors = factors.map(f => toBI(f));
-    if (intFactors.includes(0n)) {
+    if (factors.includes(0n)) {
       this.sign = 0;
     } else {
-      const negatives = intFactors.filter(f => toSign(f) === -1).length;
+      const negatives = factors.filter(f => toSign(f) === -1).length;
       this.sign = negatives % 2 === 0 ? 1 : -1;
     }
-    this.factors = intFactors.map(n => abs(n)).filter(f => f !== 1n);
+    this.factors = factors.map(n => abs(n)).filter(f => f !== 1n);
   }
   simplify() {
     if (this.sign === 0) return new Int(0n);
@@ -730,13 +721,8 @@ export class Power implements Surd {
   preferablyInt() {
     const base = this.base.simplify().preferablyInt();
     const ex = this.exponent.simplify().preferablyInt();
-    if (base instanceof Int && ex instanceof Int) {
-      try {
-        return new Int(base.compute() ** ex.compute());
-      } catch (err) {
-        return this;
-      }
-    }
+    if (base instanceof Int && ex instanceof Int)
+      return new Int(base.compute() ** ex.compute());
     return this;
   }
 }
