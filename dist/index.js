@@ -17,10 +17,6 @@ exports.SigmaSummation =
   exports.Variable =
   exports.Int =
     void 0;
-// const digits = (x: bigint) => {
-//   return `${x}`.split("").map(d => parseInt(d));
-// };
-// const sumDigits = (x: bigint) => digits(x).reduce((a, b) => a + b, 0);
 const isZero = x => x instanceof Int && x.compute() === 0n;
 const isOne = x => x instanceof Int && x.compute() === 1n;
 const remove = (arr, x) => {
@@ -206,17 +202,21 @@ class Summation {
     // );
     const otherOther = other;
     const intSum = integers.reduce((a, b) => a + b, 0n);
+    const newFractions = [
+      new Fraction(new Int(intSum), new Int(1)),
+      ...fractions,
+    ];
     const fractionSum =
-      fractions.length === 0
+      newFractions.length === 0
         ? new Int(0n)
-        : fractions.reduce((a, b) => Fraction.add(a, b)).simplify();
+        : newFractions.reduce((a, b) => Fraction.add(a, b)).simplify();
     // const factSum = PowerFactorisation.add(facts);
     // const simpleFactSum =
     //   factSum instanceof Summation
     //     ? new Summation(factSum.terms.map(t => t.simplify()))
     //     : factSum.simplify();
     const summedTerms = [
-      new Int(intSum),
+      // new Int(intSum),
       fractionSum,
       // simpleFactSum,
       ...otherOther,
@@ -587,10 +587,9 @@ class Fraction {
       return result;
     }
     try {
-      return new Fraction(
-        PowerFactorisation.from(this.num.simplify()),
-        PowerFactorisation.from(this.den.simplify()),
-      ).simplify();
+      const num = PowerFactorisation.from(this.num.simplify());
+      const den = PowerFactorisation.from(this.den.simplify());
+      return new Fraction(num, den).simplify();
     } catch (err) {
       if (!`${err}`.includes("factorisation")) throw err;
       return new Fraction(this.num.simplify(), this.den.simplify());
@@ -618,11 +617,13 @@ class Fraction {
    */
   static add(a, b) {
     try {
-      // (w/ox) + (y/oz) = (wz + yx)/(oxz)
+      // (w/ox) + (y/oz) = (wz + xy)/(oxz)
       const w = PowerFactorisation.from(a.num);
       const x = PowerFactorisation.from(a.den).toPfs();
       const y = PowerFactorisation.from(b.num);
       const z = PowerFactorisation.from(b.den).toPfs();
+      if (w.sign === 0) return b;
+      if (y.sign === 0) return a;
       const aSign = w.sign === x.sign ? 1 : -1;
       const bSign = y.sign === z.sign ? 1 : -1;
       const overlap = getPowerOverlap(x.factors, z.factors);
