@@ -17,7 +17,7 @@
       "parserOptions": { "project": "src/test.tsconfig.json" }
     },
     {
-      "files": ["src/dev.ts"],
+      "files": ["src/dev.ts", "src/types/*.ts"],
       "parserOptions": { "project": "src/test.tsconfig.json" }
     }
   ],
